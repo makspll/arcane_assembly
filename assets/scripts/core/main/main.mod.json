@@ -1,0 +1,7 @@
+{
+    "name": "Main",
+    "kind": "Core",
+    "description": "Entry point for all game logic",
+    "version": "0.0.0",
+    "dependantOnLuaScripts": []
+}
