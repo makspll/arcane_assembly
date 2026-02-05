@@ -3,12 +3,15 @@ use bevy_mod_scripting::{ladfile::plugin::ScriptingFilesGenerationPlugin, prelud
 use std::path::*;
 
 use crate::{
-    console::DevConsolePlugin, scripts::ScriptLoaderPlugin, settings::WindowSettings,
-    state::ArcaneAssemblyGameStatePlugin,
+    character::CharacterPlugin, console::DevConsolePlugin, map::MapPlugin, physics::PhysicsPlugin,
+    scripts::ScriptLoaderPlugin, settings::WindowSettings, state::ArcaneAssemblyGameStatePlugin,
 };
 
 mod camera;
+mod character;
 mod console;
+mod map;
+mod physics;
 mod scripts;
 mod settings;
 mod state;
@@ -59,6 +62,9 @@ impl Plugin for ArcaneAssemblyPlugin {
             DevConsolePlugin,
             crate::camera::CameraPlugin,
             ArcaneAssemblyGameStatePlugin,
+            CharacterPlugin,
+            PhysicsPlugin,
+            MapPlugin,
         ));
     }
 }

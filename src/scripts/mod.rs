@@ -15,6 +15,7 @@ use crate::{
     state::GameState,
 };
 
+pub mod bindings;
 pub mod loaded_script_descriptors;
 pub mod script_descriptor;
 pub mod script_descriptor_asset_loader;

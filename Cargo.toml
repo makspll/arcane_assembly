@@ -12,3 +12,9 @@ bevy_mod_scripting = { version = "0.19", features = [
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
 bevy_console = { version = "0.17" }
+bevy_rapier2d = { git = "https://github.com/Buncys/bevy_rapier", branch = "bevy-0.18.0", features = [
+    "debug-render-2d",
+    "enhanced-determinism",
+    "serde-serialize",
+    "parallel",
+] }
