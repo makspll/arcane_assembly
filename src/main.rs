@@ -1,10 +1,16 @@
 use bevy::{prelude::*, window::WindowResolution};
+use bevy_aseprite_ultra::{AsepriteUltraPlugin, prelude::Aseprite};
 use bevy_mod_scripting::{ladfile::plugin::ScriptingFilesGenerationPlugin, prelude::*};
 use std::path::*;
 
 use crate::{
-    character::CharacterPlugin, console::DevConsolePlugin, map::MapPlugin, physics::PhysicsPlugin,
-    scripts::ScriptLoaderPlugin, settings::WindowSettings, state::ArcaneAssemblyGameStatePlugin,
+    character::CharacterPlugin,
+    console::DevConsolePlugin,
+    map::MapPlugin,
+    physics::PhysicsPlugin,
+    scripts::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
+    settings::WindowSettings,
+    state::ArcaneAssemblyGameStatePlugin,
 };
 
 mod camera;
@@ -14,6 +20,7 @@ mod map;
 mod physics;
 mod scripts;
 mod settings;
+mod sprite;
 mod state;
 
 fn main() -> AppExit {
@@ -29,20 +36,31 @@ impl Plugin for ArcaneAssemblyPlugin {
 
         // Add Bevy plugins.
         app.add_plugins(
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Window {
-                    title: "Arcane Assembly".to_string(),
-                    fit_canvas_to_parent: true,
-                    resolution: WindowResolution::new(
-                        window_settings.width,
-                        window_settings.height,
-                    ),
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Window {
+                        title: "Arcane Assembly".to_string(),
+                        fit_canvas_to_parent: true,
+                        resolution: WindowResolution::new(
+                            window_settings.width,
+                            window_settings.height,
+                        ),
+                        ..default()
+                    }
+                    .into(),
                     ..default()
-                }
-                .into(),
-                ..default()
-            }),
+                })
+                .set(ImagePlugin::default_nearest()),
         );
+
+        #[cfg(debug_assertions)] // debug/dev builds only
+        {
+            use bevy::diagnostic::LogDiagnosticsPlugin;
+            use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+            app.add_plugins(LogDiagnosticsPlugin::default())
+                .add_plugins(EguiPlugin::default())
+                .add_plugins(WorldInspectorPlugin::new());
+        }
 
         // Bevy Mod Scripting Framework
         app.add_plugins(BMSPlugin.set::<ScriptingFilesGenerationPlugin>(
@@ -56,6 +74,10 @@ impl Plugin for ArcaneAssemblyPlugin {
             ),
         ));
 
+        // Dependencies
+        app.add_plugins(AsepriteUltraPlugin);
+        // app.register_type::<Aseprite>();
+
         // Game Plugins
         app.add_plugins((
             ScriptLoaderPlugin,
@@ -65,6 +87,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             CharacterPlugin,
             PhysicsPlugin,
             MapPlugin,
+            ScriptBindingsPlugin,
         ));
     }
 }

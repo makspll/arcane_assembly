@@ -10,6 +10,7 @@ use bevy::{
     input::{ButtonInput, keyboard::KeyCode},
     math::{Vec2, Vec3},
     prelude::{Deref, DerefMut},
+    reflect::Reflect,
     sprite::Sprite,
     time::{Fixed, Time},
     transform::components::Transform,
@@ -21,14 +22,13 @@ use bevy_rapier2d::prelude::{
 
 use crate::physics::{self, DOWN, GRAVITY_ACCELERATION, LEFT, PIXELS_PER_METER, RIGHT, UP};
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Player;
 
 #[derive(Bundle)]
 pub struct ControllableCharacter {
     pub controller: KinematicCharacterController,
     pub collider: Collider,
-    pub sprite: Sprite,
     pub transform: Transform,
 }
 
@@ -48,13 +48,6 @@ impl Default for ControllableCharacter {
                 ..Default::default()
             },
             collider: Collider::ball(5.0),
-            sprite: Sprite::from_color(
-                Color::WHITE,
-                Vec2 {
-                    x: PIXELS_PER_METER,
-                    y: PIXELS_PER_METER,
-                },
-            ),
             transform: Transform {
                 translation: Vec3::ZERO,
                 ..Default::default()
@@ -90,6 +83,7 @@ pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<Mo
 
 const MOVEMENT_SPEED: f32 = 50.0;
 
+// TODO: this feels junk, the physics ain't adding up, make this feel "crunchy and buttery"
 pub fn player_movement(
     time: Res<Time<Fixed>>,
     mut input: ResMut<MovementInput>,

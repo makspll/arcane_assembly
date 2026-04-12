@@ -14,14 +14,15 @@ pub struct CharacterPlugin;
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.init_resource::<MovementInput>()
-            .add_systems(Startup, spawn_dummy_character)
+            .add_systems(Startup, spawn_player_entity)
             .add_systems(PreUpdate, handle_input.after(InputSystems))
             .add_systems(FixedUpdate, player_movement);
+        app.register_type::<Player>();
         // .add_systems(FixedUpdate, );
     }
 }
 
-pub fn spawn_dummy_character(mut commands: Commands) {
+pub fn spawn_player_entity(mut commands: Commands) {
     commands.spawn((ControllableCharacter::default(), Player));
 }
 
