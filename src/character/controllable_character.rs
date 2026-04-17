@@ -60,8 +60,16 @@ impl Default for ControllableCharacter {
 #[derive(Default, Resource, Deref, DerefMut)]
 pub struct MovementInput(Vec2);
 
+#[derive(Default, Resource, Deref, DerefMut)]
+pub struct JumpAction(bool);
 
-pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<MovementInput>) {
+pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<MovementInput>, mut jump: ResMut<JumpAction>, player: Query<
+    (
+        &mut KinematicCharacterController,
+        Option<&KinematicCharacterControllerOutput>,
+    ),
+    With<Player>,
+>) {
     **movement = Vec2::ZERO;
     if keyboard.pressed(KeyCode::KeyW) {
         **movement += UP;
@@ -80,15 +88,25 @@ pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<Mo
     if keyboard.pressed(KeyCode::ShiftLeft) {
         **movement *= 2.0;
     }
+
+    let Ok((_, output)) = player.single() else {
+        return;
+    };
+
+    // Also allow backspace because of my keyboard
+    if output.is_some_and(|o| o.grounded) && (keyboard.just_pressed(KeyCode::Space) || keyboard.just_pressed(KeyCode::Backspace)){
+        **jump = true;
+    }
 }
 
 const MOVEMENT_SPEED: f32 = 10.0;
-const JUMP: f32 = 25.0;
+const JUMP_SPEED: f32 = 25.0;
 
 // TODO: this feels junk, the physics ain't adding up, make this feel "crunchy and buttery"
 pub fn player_movement(
     time: Res<Time<Fixed>>,
     input: ResMut<MovementInput>,
+    mut jump: ResMut<JumpAction>,
     mut player: Query<
         (
             &mut KinematicCharacterController,
@@ -110,8 +128,9 @@ pub fn player_movement(
 
     *vertical_velocity += GRAVITY_ACCELERATION * dt;
 
-    if grounded && input.y > 0.0 {
-        *vertical_velocity += JUMP;
+    if grounded && **jump {
+        *vertical_velocity += JUMP_SPEED;
+        **jump = false;
     }
 
     let horizontal = Vec2::new(input.x, 0.0) * MOVEMENT_SPEED;

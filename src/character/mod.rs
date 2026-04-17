@@ -4,16 +4,14 @@ use bevy::{
     input::InputSystems,
 };
 
-use crate::character::controllable_character::{
-    ControllableCharacter, MovementInput, Player, handle_input, player_movement,
-};
+use crate::character::controllable_character::{ControllableCharacter, MovementInput, Player, handle_input, player_movement, JumpAction};
 pub mod controllable_character;
 
 pub struct CharacterPlugin;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut bevy::app::App) {
-        app.init_resource::<MovementInput>()
+        app.init_resource::<MovementInput>().init_resource::<JumpAction>()
             .add_systems(Startup, spawn_player_entity)
             .add_systems(PreUpdate, handle_input.after(InputSystems))
             .add_systems(FixedUpdate, player_movement);
