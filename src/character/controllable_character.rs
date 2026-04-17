@@ -60,6 +60,7 @@ impl Default for ControllableCharacter {
 #[derive(Default, Resource, Deref, DerefMut)]
 pub struct MovementInput(Vec2);
 
+
 pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<MovementInput>) {
     **movement = Vec2::ZERO;
     if keyboard.pressed(KeyCode::KeyW) {
@@ -81,7 +82,8 @@ pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<Mo
     }
 }
 
-const MOVEMENT_SPEED: f32 = 50.0;
+const MOVEMENT_SPEED: f32 = 10.0;
+const JUMP: f32 = 25.0;
 
 // TODO: this feels junk, the physics ain't adding up, make this feel "crunchy and buttery"
 pub fn player_movement(
@@ -107,6 +109,10 @@ pub fn player_movement(
     }
 
     *vertical_velocity += GRAVITY_ACCELERATION * dt;
+
+    if grounded && input.y > 0.0 {
+        *vertical_velocity += JUMP;
+    }
 
     let horizontal = Vec2::new(input.x, 0.0) * MOVEMENT_SPEED;
 
