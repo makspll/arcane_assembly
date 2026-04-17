@@ -1,6 +1,7 @@
+use crate::character::controllable_character::Player;
 use bevy::{
     app::{Plugin, Startup, Update},
-    camera::{Camera2d, OrthographicProjection, Projection, ScalingMode},
+    camera::{Camera2d, OrthographicProjection, Projection},
     ecs::{
         query::{With, Without},
         system::{Commands, Res, Single},
@@ -9,8 +10,6 @@ use bevy::{
     time::Time,
     transform::components::Transform,
 };
-
-use crate::character::controllable_character::Player;
 
 pub struct CameraPlugin;
 

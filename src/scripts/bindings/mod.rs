@@ -1,28 +1,19 @@
-use bevy::{
-    app::{App, Plugin},
-    asset::{AssetServer, Assets, Handle, LoadedUntypedAsset},
-    ecs::{
-        entity::Entity,
-        world::{EntityRef, Mut},
-    },
-    prelude::World,
-};
-use bevy_mod_scripting::{
-    bindings::{
-        FunctionCallContext, InteropError, ReflectBase, ReflectBaseType, ReflectReference,
-        ScriptQueryBuilder, ScriptQueryResult, ScriptTypeRegistration, Val,
-    },
-    prelude::GlobalNamespace,
-    script_bindings,
-};
-
 use crate::{
     scripts::{
         assets::load_untyped_asset_for_script_descriptor,
-        loaded_script_descriptors::{self, LoadedScriptDescriptors},
-        script_descriptor::ScriptDescriptor,
+        loaded_script_descriptors::LoadedScriptDescriptors, script_descriptor::ScriptDescriptor,
     },
     sprite::aseprite::{AsepriteHandle, set_aseprite_animation_on_entity},
+};
+use bevy::{
+    app::{App, Plugin},
+    asset::{AssetServer, Assets, Handle, LoadedUntypedAsset},
+    ecs::{entity::Entity, world::Mut},
+    prelude::World,
+};
+use bevy_mod_scripting::{
+    bindings::{FunctionCallContext, InteropError, V, WorldExtensions},
+    script_bindings,
 };
 
 #[script_bindings(name = "global_functions", remote, unregistered)]
@@ -37,7 +28,7 @@ impl World {
         ctxt: FunctionCallContext,
         mod_name: String,
         path: String,
-    ) -> Result<Option<Val<Handle<LoadedUntypedAsset>>>, InteropError> {
+    ) -> Result<Option<V<Handle<LoadedUntypedAsset>>>, InteropError> {
         let world = ctxt.world()?;
         let o =
             world.with_resource(|script_descriptor_assets: &Assets<ScriptDescriptor>| {
@@ -54,7 +45,7 @@ impl World {
                     })
                 })
             })???;
-        Ok(o.map(Val::from))
+        Ok(o.map(V::from))
     }
 }
 
@@ -62,12 +53,12 @@ impl World {
 impl Entity {
     fn set_aseprite_animation(
         ctxt: FunctionCallContext,
-        entity: Val<Entity>,
+        entity: V<Entity>,
         spritesheet: AsepriteHandle,
         animation_tag: String,
     ) -> Result<(), InteropError> {
         let world = ctxt.world()?;
-        world.with_global_access(|w| {
+        world.with_world_mut_access(|w| {
             set_aseprite_animation_on_entity(w.commands(), spritesheet.0, entity.0, &animation_tag);
             w.flush();
         })?;

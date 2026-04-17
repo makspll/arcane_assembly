@@ -1,34 +1,20 @@
 //! Wrappers for bevy_aseprite types which support reflection
 
-use std::{any::TypeId, error::Error, sync::Arc};
-
+use crate::physics::PIXELS_PER_METER;
 use bevy::{
-    asset::{
-        Asset, AssetLoader, Assets, Handle, LoadedUntypedAsset, transformer::AssetTransformer,
-    },
-    ecs::{
-        bundle::Bundle,
-        entity::Entity,
-        error::BevyError,
-        system::{Commands, In},
-        world::Mut,
-    },
+    asset::{Assets, Handle, LoadedUntypedAsset},
+    ecs::{bundle::Bundle, entity::Entity, system::Commands},
     math::Vec2,
-    reflect::{DynamicTyped, FromReflect, Reflect, TypePath, TypeRegistry, Typed},
+    reflect::{Reflect, TypeRegistry, Typed},
     sprite::Sprite,
 };
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation, Aseprite};
 use bevy_mod_scripting::{
-    GetTypeDependencies, TypedThrough,
-    bindings::{
-        ArgMeta, FromScript, InteropError, ReflectBase, ReflectReference, ScriptArgument,
-        TypedThrough, Val,
-    },
-    ladfile::ReflectionPrimitiveKind,
+    GetTypeDependencies,
+    bindings::{ArgMeta, FromScript, InteropError, TypedThrough, V, WorldExtensions},
+    display::WorldAccessGuard,
     prelude::ScriptValue,
 };
-
-use crate::physics::{METERS_PER_PIXEL, PIXELS_PER_METER};
 
 /// A newtype around [`Handle<Aseprite>`], with de-sugaring implemented for script binding code.
 #[derive(Clone, Debug, Reflect, GetTypeDependencies)]
@@ -47,22 +33,16 @@ impl FromScript for AsepriteHandle {
     type This<'w> = Self;
 
     fn from_script(
-        value: bevy_mod_scripting::prelude::ScriptValue,
-        world: bevy_mod_scripting::bindings::WorldGuard<'_>,
+        value: ScriptValue,
+        world: WorldAccessGuard<'_>,
     ) -> Result<Self::This<'_>, bevy_mod_scripting::bindings::InteropError>
     where
         Self: Sized,
     {
-        // if let ScriptValue::Reference(ref ref_) = value
-        //     && let ReflectBase::Asset(untyped_handle, _) = &ref_.base.base_id
-        //     && let Ok(aseprite_handle) = untyped_handle.clone().try_typed::<Aseprite>()
-        // {
-        //     return Ok(Self(aseprite_handle));
-        // }
         world
             .clone()
             .with_resource(|untyped_handles: &Assets<LoadedUntypedAsset>| {
-                Val::<Handle<LoadedUntypedAsset>>::from_script(value, world).and_then(move |h| {
+                V::<Handle<LoadedUntypedAsset>>::from_script(value, world).and_then(move |h| {
                     let handle_to_untyped_handle = h.into_inner();
 
                     let untyped_handle = untyped_handles

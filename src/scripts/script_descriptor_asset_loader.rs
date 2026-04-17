@@ -1,12 +1,11 @@
-use bevy::{
-    asset::{AssetLoader, AssetPath, LoadedUntypedAsset},
-    ecs::error::BevyError,
-    reflect::{GetPath, TypePath},
-};
-
 use crate::scripts::{
     script_descriptor::ScriptDescriptor,
     systems::{asset_root_path, recurse_dirs},
+};
+use bevy::{
+    asset::{AssetLoader, AssetPath},
+    ecs::error::BevyError,
+    reflect::TypePath,
 };
 
 #[derive(TypePath)]

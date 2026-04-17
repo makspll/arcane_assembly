@@ -1,5 +1,5 @@
 use bevy::{prelude::*, window::WindowResolution};
-use bevy_aseprite_ultra::{AsepriteUltraPlugin, prelude::Aseprite};
+use bevy_aseprite_ultra::AsepriteUltraPlugin;
 use bevy_mod_scripting::{ladfile::plugin::ScriptingFilesGenerationPlugin, prelude::*};
 use std::path::*;
 
@@ -10,6 +10,7 @@ use crate::{
     physics::PhysicsPlugin,
     scripts::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
     settings::WindowSettings,
+    sprite::SpritesPlugin,
     state::ArcaneAssemblyGameStatePlugin,
 };
 
@@ -88,6 +89,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             PhysicsPlugin,
             MapPlugin,
             ScriptBindingsPlugin,
+            SpritesPlugin,
         ));
     }
 }

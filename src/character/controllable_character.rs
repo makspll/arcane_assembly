@@ -1,5 +1,5 @@
+use crate::physics::{self, DOWN, GRAVITY_ACCELERATION, LEFT, RIGHT, UP};
 use bevy::{
-    color::Color,
     ecs::{
         bundle::Bundle,
         component::Component,
@@ -11,22 +11,21 @@ use bevy::{
     math::{Vec2, Vec3},
     prelude::{Deref, DerefMut},
     reflect::Reflect,
-    sprite::Sprite,
     time::{Fixed, Time},
     transform::components::Transform,
 };
+use bevy_mod_scripting::prelude::ScriptComponent;
 use bevy_rapier2d::prelude::{
     CharacterAutostep, CharacterLength, Collider, KinematicCharacterController,
-    KinematicCharacterControllerOutput, RigidBody,
+    KinematicCharacterControllerOutput,
 };
-
-use crate::physics::{self, DOWN, GRAVITY_ACCELERATION, LEFT, PIXELS_PER_METER, RIGHT, UP};
 
 #[derive(Component, Reflect)]
 pub struct Player;
 
 #[derive(Bundle)]
 pub struct ControllableCharacter {
+    pub scripts: ScriptComponent,
     pub controller: KinematicCharacterController,
     pub collider: Collider,
     pub transform: Transform,
@@ -35,6 +34,7 @@ pub struct ControllableCharacter {
 impl Default for ControllableCharacter {
     fn default() -> Self {
         Self {
+            scripts: Default::default(),
             controller: KinematicCharacterController {
                 up: physics::UP,
                 offset: CharacterLength::Relative(0.08),
@@ -86,7 +86,7 @@ const MOVEMENT_SPEED: f32 = 50.0;
 // TODO: this feels junk, the physics ain't adding up, make this feel "crunchy and buttery"
 pub fn player_movement(
     time: Res<Time<Fixed>>,
-    mut input: ResMut<MovementInput>,
+    input: ResMut<MovementInput>,
     mut player: Query<
         (
             &mut KinematicCharacterController,

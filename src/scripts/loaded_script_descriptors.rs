@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{AssetServer, Assets, Handle},
+    asset::{Assets, Handle},
     ecs::resource::Resource,
 };
 

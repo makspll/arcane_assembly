@@ -1,12 +1,10 @@
+use crate::scripts::{
+    loaded_script_descriptors::LoadedScriptDescriptors, script_descriptor::ScriptDescriptor,
+};
 use bevy::{
-    asset::{AssetServer, Assets, Handle, LoadedUntypedAsset, ParseAssetPathError, UntypedHandle},
+    asset::{AssetServer, Assets, Handle, LoadedUntypedAsset, ParseAssetPathError},
     ecs::world::Mut,
     log::info,
-};
-
-use crate::scripts::{
-    loaded_script_descriptors::{self, LoadedScriptDescriptors},
-    script_descriptor::ScriptDescriptor,
 };
 
 pub fn load_untyped_asset_for_script_descriptor(

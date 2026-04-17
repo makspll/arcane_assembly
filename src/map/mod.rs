@@ -1,12 +1,10 @@
+use crate::physics::DOWN;
 use bevy::{
     app::{Plugin, Startup},
     ecs::system::Commands,
-    math::Vec3,
     transform::components::Transform,
 };
 use bevy_rapier2d::prelude::Collider;
-
-use crate::physics::DOWN;
 
 pub struct MapPlugin;
 

@@ -1,29 +1,21 @@
-use std::{
-    ops::DerefMut,
-    path::{Path, PathBuf},
-};
-
 use bevy::{
-    asset::{AssetEvent, AssetPlugin, AssetServer, Assets, io::file::FileAssetReader},
+    asset::{AssetPlugin, AssetServer, Assets, io::file::FileAssetReader},
     ecs::{
         entity::Entity,
         message::MessageWriter,
         query::With,
         system::{Commands, Query, Res, ResMut},
     },
-    input::{
-        ButtonInput,
-        keyboard::{Key, KeyCode},
-    },
+    input::{ButtonInput, keyboard::Key},
     log::info,
     state::state::NextState,
 };
-use bevy_console::PrintConsoleLine;
 use bevy_mod_scripting::{
     core::{callback_labels, pipeline::ScriptPipelineState},
     lua::LuaScriptingPlugin,
     prelude::{AttachScript, ScriptCallbackEvent, ScriptComponent},
 };
+use std::path::{Path, PathBuf};
 
 use crate::{
     character::controllable_character::Player,
@@ -64,11 +56,8 @@ pub fn activate_core_scripts(
                     AttachKind::Player => {
                         commands
                             .entity(player.single().expect("player entity not spawned"))
-                            .insert(ScriptComponent(vec![handle.clone()]));
-                        // TODO: I don't think BMS currently correctly manages additions/removals within the component
-                        // only new / removed components as a whole
-                        // .entry::<ScriptComponent>()
-                        // .and_modify(move |mut c| c.0.push(handle.clone()));
+                            .entry::<ScriptComponent>()
+                            .and_modify(move |mut c| c.0.push(handle.clone()));
                     }
                 }
             }
