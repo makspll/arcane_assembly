@@ -4,5 +4,6 @@
         "assets/definitions"
     ],
     "runtime.version": "LuaJIT",
-    "hint.enable": false
+    "hint.enable": false,
+    "diagnostics.disable": ["lowercase-global"]
 }
