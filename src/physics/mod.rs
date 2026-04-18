@@ -11,7 +11,8 @@ pub const RIGHT: Vec2 = Vec2 { x: 1.0, y: 0.0 };
 
 pub const PIXELS_PER_METER: f32 = 32.0;
 pub const METERS_PER_PIXEL: f32 = 1. / PIXELS_PER_METER;
-pub const GRAVITY_ACCELERATION: f32 = -9.8;
+pub const GRAVITY_ACCELERATION_IN_METERS: f32 = -9.8;
+pub const GRAVITY_ACCELERATION_IN_PIXELS: f32 = -9.8 * PIXELS_PER_METER;
 
 pub struct PhysicsPlugin;
 

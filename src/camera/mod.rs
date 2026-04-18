@@ -1,4 +1,4 @@
-use crate::character::controllable_character::Player;
+use crate::{character::controllable_character::Player, physics::METERS_PER_PIXEL};
 use bevy::{
     app::{Plugin, Startup, Update},
     camera::{Camera2d, OrthographicProjection, Projection},
@@ -42,7 +42,7 @@ fn setup_camera(mut commands: Commands) {
         Camera2d,
         Transform::from_xyz(0., 0., 1.),
         Projection::from(OrthographicProjection {
-            scale: 0.1,
+            scale: METERS_PER_PIXEL * 0.1,
             ..OrthographicProjection::default_2d()
         }),
     ));
