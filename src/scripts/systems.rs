@@ -54,10 +54,13 @@ pub fn activate_core_scripts(
                         ));
                     }
                     AttachKind::Player => {
+                        // cuz these functions need static lifetimes, rust needs an explicit double clone
+                        let handle_clone = handle.clone();
                         commands
                             .entity(player.single().expect("player entity not spawned"))
                             .entry::<ScriptComponent>()
-                            .and_modify(move |mut c| c.0.push(handle.clone()));
+                            .or_insert_with(move || ScriptComponent(vec![handle_clone]))
+                            .and_modify(move |mut c| c.0.push(handle));
                     }
                 }
             }

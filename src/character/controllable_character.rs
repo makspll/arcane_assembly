@@ -1,4 +1,7 @@
-use crate::physics::{self, DOWN, GRAVITY_ACCELERATION, LEFT, RIGHT, UP};
+use crate::physics::{
+    self, DOWN, GRAVITY_ACCELERATION_IN_METERS, GRAVITY_ACCELERATION_IN_PIXELS, LEFT,
+    PIXELS_PER_METER, RIGHT, UP,
+};
 use bevy::{
     ecs::{
         bundle::Bundle,
@@ -17,7 +20,7 @@ use bevy::{
 use bevy_mod_scripting::prelude::ScriptComponent;
 use bevy_rapier2d::prelude::{
     CharacterAutostep, CharacterLength, Collider, KinematicCharacterController,
-    KinematicCharacterControllerOutput,
+    KinematicCharacterControllerOutput, RigidBody,
 };
 
 #[derive(Component, Reflect)]
@@ -27,6 +30,7 @@ pub struct Player;
 pub struct ControllableCharacter {
     pub scripts: ScriptComponent,
     pub controller: KinematicCharacterController,
+    pub rigid_body: RigidBody,
     pub collider: Collider,
     pub transform: Transform,
 }
@@ -34,6 +38,7 @@ pub struct ControllableCharacter {
 impl Default for ControllableCharacter {
     fn default() -> Self {
         Self {
+            rigid_body: RigidBody::KinematicPositionBased,
             scripts: Default::default(),
             controller: KinematicCharacterController {
                 up: physics::UP,
@@ -47,7 +52,8 @@ impl Default for ControllableCharacter {
                 }),
                 ..Default::default()
             },
-            collider: Collider::ball(5.0),
+            // 1 meter diameter, should cover 32x32 sprite
+            collider: Collider::ball(0.5),
             transform: Transform {
                 translation: Vec3::ZERO,
                 ..Default::default()
@@ -81,7 +87,8 @@ pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<Mo
     }
 }
 
-const MOVEMENT_SPEED: f32 = 50.0;
+const MOVEMENT_SPEED_IN_PIXELS: f32 = PIXELS_PER_METER * MOVEMENT_SPEED_IN_METERS;
+const MOVEMENT_SPEED_IN_METERS: f32 = 1.0;
 
 // TODO: this feels junk, the physics ain't adding up, make this feel "crunchy and buttery"
 pub fn player_movement(
@@ -106,9 +113,9 @@ pub fn player_movement(
         *vertical_velocity = 0.0;
     }
 
-    *vertical_velocity += GRAVITY_ACCELERATION * dt;
+    *vertical_velocity += GRAVITY_ACCELERATION_IN_METERS * dt;
 
-    let horizontal = Vec2::new(input.x, 0.0) * MOVEMENT_SPEED;
+    let horizontal = Vec2::new(input.x, 0.0) * MOVEMENT_SPEED_IN_METERS;
 
     let translation = Vec2::new(horizontal.x, *vertical_velocity) * dt;
 

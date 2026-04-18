@@ -79,10 +79,9 @@ pub fn set_aseprite_animation_on_entity(
             aseprite: spritesheet,
         },
         sprite: Sprite {
-            custom_size: Some(Vec2 {
-                x: PIXELS_PER_METER,
-                y: PIXELS_PER_METER,
-            }),
+            // camera is scaled such that we align with physics units
+            // size is in meters here, 1m = 32px
+            custom_size: Some(Vec2 { x: 1.0, y: 1.0 }),
             ..Default::default()
         },
     });
