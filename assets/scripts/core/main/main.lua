@@ -5,7 +5,6 @@ function on_script_loaded()
         print("initializing core logic")
 
         print("iniitalized core logic")
-        state.player_entity = player
         state.initialized = true
     end
 

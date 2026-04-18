@@ -13,7 +13,8 @@ use crate::{
         script_descriptor::ScriptDescriptor,
         script_descriptor_asset_loader::ScriptDescriptorAssetLoader,
         systems::{
-            OnUpdate, activate_core_scripts, dispaptch_on_update, init_load_of_all_script_mods,
+            OnPlayerInput, OnUpdate, activate_core_scripts, dispaptch_on_update,
+            dispatch_on_player_input, init_load_of_all_script_mods,
         },
     },
     state::GameState,
@@ -41,14 +42,19 @@ impl Plugin for ScriptLoaderPlugin {
             .add_systems(
                 Update,
                 (
-                    activate_core_scripts.run_if(in_state(GameState::CoreScriptsLoading)),
-                    dispaptch_on_update.run_if(in_state(GameState::Running)),
+                    (activate_core_scripts).run_if(in_state(GameState::CoreScriptsLoading)),
+                    (dispaptch_on_update, dispatch_on_player_input)
+                        .run_if(in_state(GameState::Running)),
                 ),
             )
             .add_systems(
                 Update,
-                event_handler::<OnUpdate, LuaScriptingPlugin>
+                (
+                    event_handler::<OnUpdate, LuaScriptingPlugin>,
+                    event_handler::<OnPlayerInput, LuaScriptingPlugin>,
+                )
                     .after(dispaptch_on_update)
+                    .after(dispatch_on_player_input)
                     .run_if(in_state(GameState::Running)),
             );
     }
