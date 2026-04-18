@@ -72,10 +72,13 @@ pub fn set_aseprite_animation_on_entity(
     spritesheet: Handle<Aseprite>,
     entity: Entity,
     animation_tag: &str,
+    flip_sprite: bool,
 ) {
-    cmd.entity(entity).insert_if_new(AsepriteBundle {
+    let animation_tag = animation_tag.to_owned();
+    let mut entity_cmds = cmd.entity(entity);
+    let entity_cmds = entity_cmds.insert_if_new(AsepriteBundle {
         spritesheet: AseAnimation {
-            animation: Animation::tag(animation_tag),
+            animation: Animation::tag(&animation_tag),
             aseprite: spritesheet,
         },
         sprite: Sprite {
@@ -85,4 +88,11 @@ pub fn set_aseprite_animation_on_entity(
             ..Default::default()
         },
     });
+
+    entity_cmds
+        .entry::<AseAnimation>()
+        .and_modify(move |mut a| a.animation = Animation::tag(&animation_tag));
+    entity_cmds
+        .entry::<Sprite>()
+        .and_modify(move |mut s| s.flip_x = flip_sprite);
 }

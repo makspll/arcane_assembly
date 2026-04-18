@@ -17,6 +17,7 @@ use crate::{
 mod camera;
 mod character;
 mod console;
+mod input;
 mod map;
 mod physics;
 mod scripts;

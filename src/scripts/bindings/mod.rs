@@ -56,10 +56,17 @@ impl Entity {
         entity: V<Entity>,
         spritesheet: AsepriteHandle,
         animation_tag: String,
+        flip_sprite: Option<bool>,
     ) -> Result<(), InteropError> {
         let world = ctxt.world()?;
         world.with_world_mut_access(|w| {
-            set_aseprite_animation_on_entity(w.commands(), spritesheet.0, entity.0, &animation_tag);
+            set_aseprite_animation_on_entity(
+                w.commands(),
+                spritesheet.0,
+                entity.0,
+                &animation_tag,
+                flip_sprite.unwrap_or(false),
+            );
             w.flush();
         })?;
         Ok(())

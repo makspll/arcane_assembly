@@ -4,21 +4,30 @@ use bevy::{
         entity::Entity,
         message::MessageWriter,
         query::With,
-        system::{Commands, Query, Res, ResMut},
+        schedule::And,
+        system::{Commands, Local, Query, Res, ResMut},
+        world::Ref,
     },
-    input::{ButtonInput, keyboard::Key},
+    input::{
+        ButtonInput,
+        keyboard::{Key, KeyCode},
+    },
     log::info,
     state::state::NextState,
 };
 use bevy_mod_scripting::{
     core::{callback_labels, pipeline::ScriptPipelineState},
     lua::LuaScriptingPlugin,
-    prelude::{AttachScript, ScriptCallbackEvent, ScriptComponent},
+    prelude::{AttachScript, ScriptCallbackEvent, ScriptComponent, ScriptValue},
 };
-use std::path::{Path, PathBuf};
+use std::{
+    collections::VecDeque,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     character::controllable_character::Player,
+    input::PlayerInput,
     scripts::{
         loaded_script_descriptors::LoadedScriptDescriptors,
         script_descriptor::{AttachKind, ScriptDescriptor, ScriptKind},
@@ -135,11 +144,42 @@ pub fn dispaptch_on_update(mut writer: MessageWriter<ScriptCallbackEvent>) {
     writer.write(ScriptCallbackEvent::new_for_all_contexts(OnUpdate, vec![]));
 }
 
-pub fn dispatch_on_input(
+pub fn dispatch_on_player_input(
+    mut any_inputs_last_frame: Local<bool>,
     mut writer: MessageWriter<ScriptCallbackEvent>,
-    keyboard_input: Res<ButtonInput<Key>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    player_scripts: Query<(Entity, Ref<ScriptComponent>), (With<Player>, With<ScriptComponent>)>,
 ) {
-    let pressed = keyboard_input.get_just_pressed().collect::<Vec<_>>();
+    let inputs = keyboard_input
+        .get_pressed()
+        .map(PlayerInput::from)
+        .filter(|i| !matches!(i, PlayerInput::Unknown))
+        .map(ScriptValue::from)
+        .collect::<VecDeque<_>>();
 
-    // .write(ScriptCallbackEvent::new_for_all_contexts(OnInput, vec![]));
+    // only trigger the first time no inputs are present and any time there are buttons pressed
+    if inputs.is_empty() {
+        if !*any_inputs_last_frame {
+            return;
+        }
+        *any_inputs_last_frame = false;
+    } else {
+        *any_inputs_last_frame = true;
+    }
+
+    for (entity, scripts) in player_scripts {
+        let events = scripts
+            .0
+            .iter()
+            .map(|script| {
+                ScriptCallbackEvent::new_for_script_entity(
+                    OnPlayerInput,
+                    vec![ScriptValue::List(inputs.clone())],
+                    script.clone(),
+                    entity,
+                )
+            })
+            .collect::<Vec<_>>();
+        writer.write_batch(events);
+    }
 }
