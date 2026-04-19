@@ -4,6 +4,7 @@ use bevy_mod_scripting::{ladfile::plugin::ScriptingFilesGenerationPlugin, prelud
 use std::path::*;
 
 use crate::{
+    audio::GameAudioPlugin,
     character::CharacterPlugin,
     console::DevConsolePlugin,
     map::MapPlugin,
@@ -14,6 +15,7 @@ use crate::{
     state::ArcaneAssemblyGameStatePlugin,
 };
 
+mod audio;
 mod camera;
 mod character;
 mod console;
@@ -91,6 +93,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             MapPlugin,
             ScriptBindingsPlugin,
             SpritesPlugin,
+            GameAudioPlugin,
         ));
     }
 }

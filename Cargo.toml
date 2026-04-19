@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18", features = ["debug"] }
+bevy = { version = "0.18", features = ["debug", "wav"] }
 bevy_mod_scripting = { git = "https://github.com/makspll/bevy_mod_scripting", rev = "1603c3a", features = [
     "luajit",
     "lua_language_server_files",

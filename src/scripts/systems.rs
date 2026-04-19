@@ -14,6 +14,7 @@ use bevy::{
     },
     log::info,
     state::state::NextState,
+    time::{Real, Time},
 };
 use bevy_mod_scripting::{
     core::{callback_labels, pipeline::ScriptPipelineState},
@@ -140,11 +141,18 @@ callback_labels!(
     OnPlayerInput => "on_player_input",
 );
 
-pub fn dispaptch_on_update(mut writer: MessageWriter<ScriptCallbackEvent>) {
-    writer.write(ScriptCallbackEvent::new_for_all_contexts(OnUpdate, vec![]));
+// should we use virtual time here? if we decide to start pausing stuff re-visit
+pub fn dispaptch_on_update(time: Res<Time<Real>>, mut writer: MessageWriter<ScriptCallbackEvent>) {
+    let dt = ScriptValue::Float(time.delta_secs_f64());
+    let time_seconds = ScriptValue::Float(time.elapsed_secs_f64());
+    writer.write(ScriptCallbackEvent::new_for_all_contexts(
+        OnUpdate,
+        vec![dt, time_seconds],
+    ));
 }
 
 pub fn dispatch_on_player_input(
+    time: Res<Time<Real>>,
     mut any_inputs_last_frame: Local<bool>,
     mut writer: MessageWriter<ScriptCallbackEvent>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -166,7 +174,7 @@ pub fn dispatch_on_player_input(
     } else {
         *any_inputs_last_frame = true;
     }
-
+    let time_seconds = ScriptValue::Float(time.elapsed_secs_f64());
     for (entity, scripts) in player_scripts {
         let events = scripts
             .0
@@ -174,7 +182,7 @@ pub fn dispatch_on_player_input(
             .map(|script| {
                 ScriptCallbackEvent::new_for_script_entity(
                     OnPlayerInput,
-                    vec![ScriptValue::List(inputs.clone())],
+                    vec![ScriptValue::List(inputs.clone()), time_seconds.clone()],
                     script.clone(),
                     entity,
                 )
