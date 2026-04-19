@@ -5,11 +5,16 @@ local input_to_animation_map = {
     jump = {"Jump", false, 2},
     unknown = {"Idle", false, 0},
 }
+local STEP_SFX_PERIOD_SECONDS = 0.3
 
 function on_script_loaded()
     state = {
+        animation_last_sound_time = 0,
         animation = "Idle",
-        spritesheet = world.load_asset_from_mod("Player", "sprites/wizard.ase")
+        animation_flip_x = false,
+        spritesheet = world.load_asset_from_mod("Player", "sprites/wizard.ase"),
+        sfx_crunch = world.load_asset_from_mod("Player", "audio/crunch.wav"),
+        sfx_step = world.load_asset_from_mod("Player", "audio/step.wav"),
     }
 
     entity:set_aseprite_animation(state.spritesheet, state.animation)
@@ -23,9 +28,16 @@ function on_script_reloaded(reloaded_state)
     state = reloaded_state
 end
 
-function on_player_input(inputs)
+function on_update(dt, elapsed_seconds)
+    if state.animation == "Walk" and (elapsed_seconds - state.animation_last_sound_time > STEP_SFX_PERIOD_SECONDS) then
+        state.animation_last_sound_time = elapsed_seconds
+        world.play_sound_effect(state.sfx_step)
+    end
+end
+
+function on_player_input(inputs, elapsed_seconds)
     local highest_priority_animation = "Idle"
-    local flip_sprite_final = false
+    local flip_sprite_final = state.animation_flip_x
     local max_priority = -1
     for _, input in pairs(inputs) do
         local input_anim = input_to_animation_map[input]
@@ -40,6 +52,10 @@ function on_player_input(inputs)
     end
     if highest_priority_animation ~= state.animation then
         state.animation = highest_priority_animation
+        state.animation_flip_x = flip_sprite_final
         entity:set_aseprite_animation(state.spritesheet, state.animation, flip_sprite_final)
+        if state.animation == "Jump" then
+            world.play_sound_effect(state.sfx_crunch)
+        end
     end
 end

@@ -1,6 +1,7 @@
 use crate::{
     scripts::{
         assets::load_untyped_asset_for_script_descriptor,
+        bindings::audio::register_audio_global_functions,
         loaded_script_descriptors::LoadedScriptDescriptors, script_descriptor::ScriptDescriptor,
     },
     sprite::aseprite::{AsepriteHandle, set_aseprite_animation_on_entity},
@@ -15,6 +16,8 @@ use bevy_mod_scripting::{
     bindings::{FunctionCallContext, InteropError, V, WorldExtensions},
     script_bindings,
 };
+
+mod audio;
 
 #[script_bindings(name = "global_functions", remote, unregistered)]
 impl World {
@@ -80,5 +83,6 @@ impl Plugin for ScriptBindingsPlugin {
         let world = app.world_mut();
         register_global_functions(world);
         register_entity_functions(world);
+        register_audio_global_functions(world);
     }
 }
