@@ -1,6 +1,9 @@
-use crate::scripts::{
-    script_descriptor::ScriptDescriptor,
-    systems::{asset_root_path, recurse_dirs},
+use crate::{
+    scripts::{
+        script_descriptor::ScriptDescriptor,
+        systems::{asset_root_path, recurse_dirs},
+    },
+    spells::spell,
 };
 use bevy::{
     asset::{AssetLoader, AssetPath},

@@ -20,3 +20,4 @@ bevy_rapier2d = { version = "0.33.0", features = [
 ] }
 bevy_aseprite_ultra = { version = "0.8", features = ["asset_processing"] }
 bevy-inspector-egui = { version = "0.36" }
+schemars = { version = "1.2" }

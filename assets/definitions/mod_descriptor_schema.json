@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ScriptDescriptor",
+  "description": "A descriptor for a mod really. Maybe rename to ModDescriptor.",
+  "type": "object",
+  "properties": {
+    "attachKind": {
+      "$ref": "#/$defs/AttachKind"
+    },
+    "dependantOnLuaScripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ScriptKind"
+    },
+    "name": {
+      "type": "string"
+    },
+    "spellComponents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SpellComponentDescriptor"
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "kind",
+    "description",
+    "version",
+    "attachKind",
+    "dependantOnLuaScripts",
+    "spellComponents"
+  ],
+  "$defs": {
+    "AttachKind": {
+      "type": "string",
+      "enum": [
+        "Player",
+        "Static"
+      ]
+    },
+    "ModPathBuf": {
+      "description": "A [`PathBuf`] but pointing to a specific mod",
+      "type": "object",
+      "properties": {
+        "mod_name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mod_name",
+        "path"
+      ]
+    },
+    "ScriptKind": {
+      "type": "string",
+      "enum": [
+        "Core",
+        "User"
+      ]
+    },
+    "SlotCount": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "None",
+            "Unlimited"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "FixedAmount": {
+              "type": "integer",
+              "format": "uint",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "FixedAmount"
+          ]
+        }
+      ]
+    },
+    "SpellComponentDescriptor": {
+      "description": "A descriptor for a",
+      "type": "object",
+      "properties": {
+        "area_of_effect_meters": {
+          "description": "If a component has an area of effect, the engine will provide nearest entities/projectiles to its callbacks",
+          "type": "number",
+          "format": "float"
+        },
+        "children_slots": {
+          "description": "Components can be slotted with children components, for example\na grouping component might trigger effects within its children components every frame",
+          "$ref": "#/$defs/SlotCount",
+          "default": "None"
+        },
+        "delay_milliseconds": {
+          "description": "The delay after which the next component can be triggered following this one.\nIf less than the time between frames, will trigger a\ncomponent every frame, but no more frequently than that.",
+          "type": "number",
+          "format": "float"
+        },
+        "friendly_name": {
+          "description": "The name to show in the UI",
+          "type": "string"
+        },
+        "icon_sprite_path": {
+          "description": "the path to an icon within the mod that can be shown in the UI, if not provided a placeholder will be used",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModPathBuf"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lifetime_milliseconds": {
+          "description": "The time after which this component is killed, and its death effect triggered",
+          "type": "number",
+          "format": "float"
+        },
+        "mana_drain_per_shot": {
+          "description": "The amount of mana drained every time this component is triggered.\nIf mana is not enough for the next component, firing is blocked.",
+          "type": "number",
+          "format": "float"
+        },
+        "script_controller_path": {
+          "description": "The controller script for this component.\nAll callbacks and triggers get sent to it while the component is alive",
+          "$ref": "#/$defs/ModPathBuf"
+        }
+      },
+      "required": [
+        "friendly_name",
+        "script_controller_path",
+        "mana_drain_per_shot",
+        "delay_milliseconds",
+        "lifetime_milliseconds",
+        "area_of_effect_meters"
+      ]
+    }
+  }
+}

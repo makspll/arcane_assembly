@@ -15,6 +15,7 @@ use crate::{
         systems::{
             OnPlayerInput, OnUpdate, activate_core_scripts, dispaptch_on_update,
             dispatch_on_player_input, init_load_of_all_script_mods,
+            load_external_dependencies_in_mods,
         },
     },
     state::GameState,
@@ -43,6 +44,8 @@ impl Plugin for ScriptLoaderPlugin {
                 Update,
                 (
                     (activate_core_scripts).run_if(in_state(GameState::CoreScriptsLoading)),
+                    (load_external_dependencies_in_mods)
+                        .run_if(in_state(GameState::ModDependencyResolution)),
                     (dispaptch_on_update, dispatch_on_player_input)
                         .run_if(in_state(GameState::Running)),
                 ),

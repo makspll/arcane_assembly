@@ -1,8 +1,10 @@
 {
+    "$schema": "../../definitions/mod_descriptor_schema.json",
     "name": "Player",
     "kind": "Core",
     "description": "Core game player controller",
     "version": "0.0.0",
     "dependantOnLuaScripts": [],
-    "attachKind": "Player"
+    "attachKind": "Player",
+    "spellComponents": []
 }

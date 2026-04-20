@@ -1,11 +1,20 @@
+use std::{error::Error, fmt::Display, path::PathBuf};
+
 use bevy::{
-    asset::{Asset, Handle, LoadedUntypedAsset},
+    asset::{Asset, AssetPath, Assets, Handle, LoadedUntypedAsset},
     reflect::TypePath,
 };
 use bevy_mod_scripting::asset::ScriptAsset;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Asset, TypePath)]
+use crate::{
+    scripts::loaded_script_descriptors::{self, LoadedScriptDescriptors},
+    spells::spell::SpellComponentDescriptor,
+};
+
+/// A descriptor for a mod really. Maybe rename to ModDescriptor.
+#[derive(Serialize, Deserialize, Asset, TypePath, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ScriptDescriptor {
     pub name: String,
@@ -18,16 +27,61 @@ pub struct ScriptDescriptor {
     pub script: Handle<ScriptAsset>,
     #[serde(skip_deserializing, skip_serializing, default)]
     pub assets: Vec<Handle<LoadedUntypedAsset>>,
+    pub spell_components: Vec<SpellComponentDescriptor>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub enum ScriptKind {
     Core,
     User,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub enum AttachKind {
     Player,
     Static,
+}
+
+/// A [`PathBuf`] but pointing to a specific mod
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, JsonSchema,
+)]
+pub struct ModPathBuf {
+    pub mod_name: String,
+    pub path: PathBuf,
+}
+
+impl Display for ModPathBuf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.mod_name)?;
+        f.write_str(": ")?;
+        f.write_str(self.path.to_str().unwrap_or_default())
+    }
+}
+
+impl ModPathBuf {
+    pub fn asset_path(
+        &self,
+        loaded_script_descriptors: &LoadedScriptDescriptors,
+        descriptor_assets: &Assets<ScriptDescriptor>,
+    ) -> Result<AssetPath<'_>, Box<dyn Error>> {
+        let (_, root_handle) = loaded_script_descriptors
+            .get_mod_by_name(&self.mod_name, descriptor_assets)
+            .ok_or_else(|| format!("could not find mod: {}", self.mod_name))?;
+
+        let utf_path = self
+            .path
+            .to_str()
+            .ok_or_else(|| format!("path contained non-utf8 characters: {self:?}"))?;
+
+        let asset_path = root_handle
+            .path()
+            .ok_or(
+                "asset handle for script descriptor without path. Did something load incorrectly ?",
+            )?
+            .parent()
+            .expect("weird path")
+            .resolve(utf_path)?;
+        Ok(asset_path)
+    }
 }

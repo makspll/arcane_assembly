@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{AssetPlugin, AssetServer, Assets, io::file::FileAssetReader},
+    asset::{self, AssetId, AssetPlugin, AssetServer, Assets, Handle, io::file::FileAssetReader},
     ecs::{
         entity::Entity,
         message::MessageWriter,
@@ -12,15 +12,19 @@ use bevy::{
         ButtonInput,
         keyboard::{Key, KeyCode},
     },
-    log::info,
+    log::{self, info},
+    platform::collections::{HashMap, HashSet},
     state::state::NextState,
     time::{Real, Time},
 };
 use bevy_mod_scripting::{
-    core::{callback_labels, pipeline::ScriptPipelineState},
+    asset::ScriptAsset,
+    core::{callback_labels, event::ScriptAttachedEvent, pipeline::ScriptPipelineState},
     lua::LuaScriptingPlugin,
     prelude::{AttachScript, ScriptCallbackEvent, ScriptComponent, ScriptValue},
+    script::ScriptAttachment,
 };
+use schemars::schema_for;
 use std::{
     collections::VecDeque,
     path::{Path, PathBuf},
@@ -38,6 +42,7 @@ use crate::{
 
 /// Transitions the game state once all currently loading scripts are finished processing
 pub fn activate_core_scripts(
+    mut started: Local<bool>,
     pipeline_state: ScriptPipelineState<LuaScriptingPlugin>,
     mut next_state: ResMut<NextState<GameState>>,
     loaded_script_descriptors: ResMut<LoadedScriptDescriptors>,
@@ -48,7 +53,8 @@ pub fn activate_core_scripts(
     let (_, loaded, total) = pipeline_state.progress();
 
     // first frame of loading
-    if total == 0 {
+    if total == 0 && !*started {
+        *started = true;
         info!("Initializing core scripts");
         for descriptor in &loaded_script_descriptors.descriptors {
             if let Some(descriptor_asset) = script_descriptor_assets.get(descriptor)
@@ -79,8 +85,17 @@ pub fn activate_core_scripts(
 
     if pipeline_state.processing_batch_completed() && loaded > 1 {
         info!("Loaded {total} mods");
-        next_state.set(GameState::Running)
+        next_state.set(GameState::ModDependencyResolution)
     }
+}
+
+pub fn sync_dev_schema() {
+    let schema = serde_json::to_string_pretty(&schema_for!(ScriptDescriptor))
+        .expect("Failed to serialize mod schema");
+    let path = asset_root_path()
+        .join("definitions")
+        .join("mod_descriptor_schema.json");
+    std::fs::write(path, schema).expect("Failed to update mod schema");
 }
 
 pub fn asset_root_path() -> PathBuf {
@@ -113,6 +128,59 @@ pub fn init_load_of_all_script_mods(
             .push(server_ref.load(asset_relative_path));
     })
     .expect("failed to read script assets");
+}
+
+/// Completes loading of mods, by resolving any pointers to external mods as handles etc.
+///
+/// Ideally we should also re-do this if new assets are added, but that's rare enough it's probably fine, downstream changes to the script will re-load the script itself.
+pub fn load_external_dependencies_in_mods(
+    mut commands: Commands,
+    loaded_script_descriptors: Res<LoadedScriptDescriptors>,
+    mut descriptors: ResMut<Assets<ScriptDescriptor>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    asset_server: Res<AssetServer>,
+) {
+    let mut script_resolutions: HashMap<(AssetId<ScriptDescriptor>, usize), Handle<ScriptAsset>> =
+        Default::default();
+    let mut static_scripts_to_attach: HashSet<Handle<ScriptAsset>> = Default::default();
+
+    for (asset_id, asset) in descriptors.iter() {
+        for (idx, spell_component) in asset.spell_components.iter().enumerate() {
+            let resolution = match spell_component
+                .script_controller_path
+                .asset_path(&loaded_script_descriptors, &descriptors)
+            {
+                Ok(resolved) => asset_server.load(resolved),
+                Err(err) => {
+                    log::error!(
+                        "Failed to resolve script dependency in mod: '{}', on spell_component_controller: '{}': {err}",
+                        asset.name,
+                        spell_component.script_controller_path
+                    );
+                    continue;
+                }
+            };
+            script_resolutions.insert((asset_id, idx), resolution.clone());
+            static_scripts_to_attach.insert(resolution);
+        }
+    }
+
+    // apply resolutions
+    for ((asset_id, spell_component_idx), resolved_script) in script_resolutions {
+        let asset = descriptors
+            .get_mut(asset_id)
+            .expect("invariant broken: previously resolved asset missing");
+        asset.spell_components[spell_component_idx].script_controller_handle =
+            Some(resolved_script);
+    }
+
+    for script in static_scripts_to_attach.drain() {
+        commands.queue(AttachScript::<LuaScriptingPlugin>::new(
+            ScriptAttachment::StaticScript(script),
+        ));
+    }
+
+    next_state.set(GameState::Running);
 }
 
 /// Recurse from the given root directory, running the processor on every found file of the given extension

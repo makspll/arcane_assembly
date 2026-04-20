@@ -1,0 +1,26 @@
+{
+    "$schema": "../../definitions/mod_descriptor_schema.json",
+    "name": "Main",
+    "kind": "Core",
+    "description": "Entry point for all game logic",
+    "version": "0.0.0",
+    "dependantOnLuaScripts": [],
+    "attachKind": "Static",
+    "spellComponents": [
+        {
+            "friendly_name": "asd",
+            "script_controller_path": {
+                "mod_name": "Main",
+                "path": "spells/plain_ass_projectile.lua"
+            },
+            "mana_drain_per_shot": 1,
+            "delay_milliseconds": 100,
+            "lifetime_milliseconds": 1000,
+            "area_of_effect_meters": 0,
+            "children_slots": {
+                "FixedAmount": 2
+            },
+            "icon_sprite_path": null
+        }
+    ]
+}

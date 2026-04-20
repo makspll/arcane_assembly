@@ -11,6 +11,7 @@ use crate::{
     physics::PhysicsPlugin,
     scripts::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
     settings::WindowSettings,
+    spells::GameSpellsPlugin,
     sprite::SpritesPlugin,
     state::ArcaneAssemblyGameStatePlugin,
 };
@@ -24,6 +25,7 @@ mod map;
 mod physics;
 mod scripts;
 mod settings;
+mod spells;
 mod sprite;
 mod state;
 
@@ -61,9 +63,13 @@ impl Plugin for ArcaneAssemblyPlugin {
         {
             use bevy::diagnostic::LogDiagnosticsPlugin;
             use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+
+            use crate::scripts::systems::sync_dev_schema;
             app.add_plugins(LogDiagnosticsPlugin::default())
                 .add_plugins(EguiPlugin::default())
                 .add_plugins(WorldInspectorPlugin::new());
+            // we can distribute this however, but it's nice to keep in sync automatically
+            app.add_systems(Startup, sync_dev_schema);
         }
 
         // Bevy Mod Scripting Framework
@@ -94,6 +100,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             ScriptBindingsPlugin,
             SpritesPlugin,
             GameAudioPlugin,
+            GameSpellsPlugin,
         ));
     }
 }
