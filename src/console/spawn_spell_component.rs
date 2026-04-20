@@ -58,7 +58,7 @@ pub fn spawn_spell_component_cmnd(
         commands.spawn(LiveSpell::new(
             Vec2::new(cmd.pos_x, cmd.pos_y),
             Vec2::new(cmd.vel_x, cmd.vel_y),
-            time,
+            &time,
             spell_component.clone(),
         ));
     }

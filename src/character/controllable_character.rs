@@ -6,18 +6,19 @@ use bevy::{
     ecs::{
         bundle::Bundle,
         component::Component,
+        message::MessageWriter,
         query::With,
         resource::Resource,
         system::{Local, Query, Res, ResMut},
     },
-    input::{ButtonInput, keyboard::KeyCode},
+    input::{ButtonInput, keyboard::KeyCode, mouse::MouseButton},
     math::{Vec2, Vec3},
     prelude::{Deref, DerefMut},
     reflect::Reflect,
     time::{Fixed, Time},
     transform::components::Transform,
 };
-use bevy_mod_scripting::prelude::ScriptComponent;
+use bevy_mod_scripting::prelude::{ScriptCallbackEvent, ScriptComponent};
 use bevy_rapier2d::prelude::{
     CharacterAutostep, CharacterLength, Collider, KinematicCharacterController,
     KinematicCharacterControllerOutput, RigidBody,
@@ -26,8 +27,13 @@ use bevy_rapier2d::prelude::{
 #[derive(Component, Reflect)]
 pub struct Player;
 
+/// A player is a character, but a character is not necessarily a player
+#[derive(Component, Reflect)]
+pub struct Character;
+
 #[derive(Bundle)]
 pub struct ControllableCharacter {
+    marker: Character,
     pub scripts: ScriptComponent,
     pub controller: KinematicCharacterController,
     pub rigid_body: RigidBody,
@@ -58,6 +64,7 @@ impl Default for ControllableCharacter {
                 translation: Vec3::ZERO,
                 ..Default::default()
             },
+            marker: Character,
         }
     }
 }

@@ -7,6 +7,7 @@ use crate::{
     audio::GameAudioPlugin,
     character::CharacterPlugin,
     console::DevConsolePlugin,
+    input::GameInputPlugin,
     map::MapPlugin,
     physics::PhysicsPlugin,
     scripts::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
@@ -101,6 +102,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             SpritesPlugin,
             GameAudioPlugin,
             GameSpellsPlugin,
+            GameInputPlugin,
         ));
     }
 }

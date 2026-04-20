@@ -1,6 +1,8 @@
-use bevy::{app::Plugin, math::Vec2};
+use bevy::{app::Plugin, ecs::bundle::Bundle, math::Vec2};
 use bevy_rapier2d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
+    prelude::{Collider, CollisionGroups, Group},
+    rapier::prelude::RigidBody,
     render::RapierDebugRenderPlugin,
 };
 
@@ -15,6 +17,23 @@ pub const GRAVITY_ACCELERATION_IN_METERS: f32 = -9.8;
 pub const GRAVITY_ACCELERATION_IN_PIXELS: f32 = -9.8 * PIXELS_PER_METER;
 
 pub struct PhysicsPlugin;
+
+/// Available collision groups in the game
+pub enum CollisionGroup {
+    Projectile,
+    ControlledEntity,
+    Terrain,
+}
+
+impl Into<Group> for CollisionGroup {
+    fn into(self) -> Group {
+        match self {
+            CollisionGroup::Projectile => Group::GROUP_1,
+            CollisionGroup::ControlledEntity => Group::GROUP_2,
+            CollisionGroup::Terrain => Group::GROUP_3,
+        }
+    }
+}
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut bevy::app::App) {

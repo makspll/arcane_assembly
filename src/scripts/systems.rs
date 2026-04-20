@@ -11,6 +11,7 @@ use bevy::{
     input::{
         ButtonInput,
         keyboard::{Key, KeyCode},
+        mouse::MouseButton,
     },
     log::{self, info},
     platform::collections::{HashMap, HashSet},
@@ -224,15 +225,21 @@ pub fn dispatch_on_player_input(
     mut any_inputs_last_frame: Local<bool>,
     mut writer: MessageWriter<ScriptCallbackEvent>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
     player_scripts: Query<(Entity, Ref<ScriptComponent>), (With<Player>, With<ScriptComponent>)>,
 ) {
-    let inputs = keyboard_input
+    let keyboard_inputs = keyboard_input
         .get_pressed()
         .map(PlayerInput::from)
         .filter(|i| !matches!(i, PlayerInput::Unknown))
-        .map(ScriptValue::from)
-        .collect::<VecDeque<_>>();
+        .map(ScriptValue::from);
+    let mouse_inputs = mouse_input
+        .get_pressed()
+        .map(PlayerInput::from)
+        .filter(|i| !matches!(i, PlayerInput::Unknown))
+        .map(ScriptValue::from);
 
+    let inputs = keyboard_inputs.chain(mouse_inputs).collect::<VecDeque<_>>();
     // only trigger the first time no inputs are present and any time there are buttons pressed
     if inputs.is_empty() {
         if !*any_inputs_last_frame {
@@ -242,7 +249,7 @@ pub fn dispatch_on_player_input(
     } else {
         *any_inputs_last_frame = true;
     }
-    let time_seconds = ScriptValue::Float(time.elapsed_secs_f64());
+    let time_seconds = ScriptValue::Float(time.elapsed_secs_wrapped_f64());
     for (entity, scripts) in player_scripts {
         let events = scripts
             .0

@@ -9,12 +9,12 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    scripts::loaded_script_descriptors::{self, LoadedScriptDescriptors},
+    scripts::loaded_script_descriptors::LoadedScriptDescriptors,
     spells::spell::SpellComponentDescriptor,
 };
 
 /// A descriptor for a mod really. Maybe rename to ModDescriptor.
-#[derive(Serialize, Deserialize, Asset, TypePath, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, Asset, TypePath, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ScriptDescriptor {
     pub name: String,
@@ -30,13 +30,13 @@ pub struct ScriptDescriptor {
     pub spell_components: Vec<SpellComponentDescriptor>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub enum ScriptKind {
     Core,
     User,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub enum AttachKind {
     Player,
     Static,

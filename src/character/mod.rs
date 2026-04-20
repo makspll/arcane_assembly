@@ -7,6 +7,7 @@ use bevy::{
 use crate::character::controllable_character::{
     ControllableCharacter, MovementInput, Player, handle_input, player_movement,
 };
+
 pub mod controllable_character;
 
 pub struct CharacterPlugin;

@@ -45,6 +45,7 @@ impl Plugin for ScriptLoaderPlugin {
                 (
                     (activate_core_scripts).run_if(in_state(GameState::CoreScriptsLoading)),
                     (load_external_dependencies_in_mods)
+                        .chain()
                         .run_if(in_state(GameState::ModDependencyResolution)),
                     (dispaptch_on_update, dispatch_on_player_input)
                         .run_if(in_state(GameState::Running)),
