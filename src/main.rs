@@ -7,10 +7,12 @@ use crate::{
     audio::GameAudioPlugin,
     character::CharacterPlugin,
     console::DevConsolePlugin,
+    input::GameInputPlugin,
     map::MapPlugin,
     physics::PhysicsPlugin,
     scripts::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
     settings::WindowSettings,
+    spells::GameSpellsPlugin,
     sprite::SpritesPlugin,
     state::ArcaneAssemblyGameStatePlugin,
 };
@@ -24,6 +26,7 @@ mod map;
 mod physics;
 mod scripts;
 mod settings;
+mod spells;
 mod sprite;
 mod state;
 
@@ -57,13 +60,19 @@ impl Plugin for ArcaneAssemblyPlugin {
                 .set(ImagePlugin::default_nearest()),
         );
 
-        #[cfg(debug_assertions)] // debug/dev builds only
+        // dev builds only, add anything we don't wanna ship into prod
+        #[cfg(feature = "dev_tools")]
         {
-            use bevy::diagnostic::LogDiagnosticsPlugin;
+            info!("running dev build");
+            use bevy_dev_tools::fps_overlay::FpsOverlayPlugin;
             use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
-            app.add_plugins(LogDiagnosticsPlugin::default())
+
+            use crate::scripts::systems::sync_dev_schema;
+            app.add_plugins(FpsOverlayPlugin::default())
                 .add_plugins(EguiPlugin::default())
                 .add_plugins(WorldInspectorPlugin::new());
+            // we can distribute this however, but it's nice to keep in sync automatically
+            app.add_systems(Startup, sync_dev_schema);
         }
 
         // Bevy Mod Scripting Framework
@@ -84,8 +93,8 @@ impl Plugin for ArcaneAssemblyPlugin {
 
         // Game Plugins
         app.add_plugins((
-            ScriptLoaderPlugin,
             DevConsolePlugin,
+            ScriptLoaderPlugin,
             crate::camera::CameraPlugin,
             ArcaneAssemblyGameStatePlugin,
             CharacterPlugin,
@@ -94,6 +103,8 @@ impl Plugin for ArcaneAssemblyPlugin {
             ScriptBindingsPlugin,
             SpritesPlugin,
             GameAudioPlugin,
+            GameSpellsPlugin,
+            GameInputPlugin,
         ));
     }
 }

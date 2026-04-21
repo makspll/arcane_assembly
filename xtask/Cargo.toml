@@ -1,0 +1,17 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+clap = { version = "4.6", features = ["derive"] }
+anyhow = "1.0"
+
+[[bin]]
+name = "xtask"
+path = "src/main.rs"
+
+[lib]
+name = "xtask_lib"
+path = "src/lib.rs"

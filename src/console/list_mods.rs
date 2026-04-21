@@ -15,10 +15,6 @@ pub fn list_mods_cmd(
     descriptor_assets: Res<Assets<ScriptDescriptor>>,
 ) {
     if let Some(Ok(_)) = log.take() {
-        log.reply(format!(
-            "Loaded mods count: {}",
-            descriptors.descriptors.len()
-        ));
         for descriptor in &descriptors.descriptors {
             match descriptor_assets.get(descriptor) {
                 Some(asset) => {

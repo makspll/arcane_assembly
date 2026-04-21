@@ -15,5 +15,6 @@ impl Plugin for ArcaneAssemblyGameStatePlugin {
 pub enum GameState {
     #[default]
     CoreScriptsLoading,
+    ModDependencyResolution,
     Running,
 }
