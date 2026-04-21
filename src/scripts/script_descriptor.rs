@@ -1,4 +1,8 @@
-use std::{error::Error, fmt::Display, path::PathBuf};
+use std::{
+    error::Error,
+    fmt::Display,
+    path::{Path, PathBuf},
+};
 
 use bevy::{
     asset::{Asset, AssetPath, Assets, Handle, LoadedUntypedAsset},
@@ -60,6 +64,17 @@ impl Display for ModPathBuf {
 }
 
 impl ModPathBuf {
+    /// Creates a new path pointing to an asset of '<mod>/assets/<path>' structure
+    pub fn new_mod_assets_path(
+        mod_name: &str,
+        path_in_mod_assets_folder: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            mod_name: mod_name.to_owned(),
+            path: PathBuf::from("assets").join(path_in_mod_assets_folder.into()),
+        }
+    }
+
     pub fn asset_path(
         &self,
         loaded_script_descriptors: &LoadedScriptDescriptors,

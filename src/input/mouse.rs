@@ -12,6 +12,8 @@ use bevy::{
     window::{PrimaryWindow, Window},
 };
 
+use crate::camera::MainCamera;
+
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
 pub struct MousePositionInWorldCoordinates(pub Vec2);
@@ -21,7 +23,7 @@ pub fn compute_mouse_world_position(
     // query to get the window (so we can read the current cursor position)
     q_window: Single<&Window, With<PrimaryWindow>>,
     // query to get camera transform
-    q_camera: Single<(&Camera, &GlobalTransform)>,
+    q_camera: Single<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) {
     let (camera, camera_transform) = *q_camera;
     let window = *q_window;

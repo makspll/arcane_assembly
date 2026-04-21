@@ -1,4 +1,5 @@
 use crate::{
+    character::health::Health,
     physics::{
         self, DOWN, GRAVITY_ACCELERATION_IN_METERS, GRAVITY_ACCELERATION_IN_PIXELS, LEFT,
         PIXELS_PER_METER, RIGHT, UP,
@@ -38,6 +39,7 @@ pub struct Character;
 pub struct ControllableCharacter {
     marker: Character,
     pub mana: Mana,
+    pub health: Health,
     pub scripts: ScriptComponent,
     pub controller: KinematicCharacterController,
     pub rigid_body: RigidBody,
@@ -48,6 +50,10 @@ pub struct ControllableCharacter {
 impl Default for ControllableCharacter {
     fn default() -> Self {
         Self {
+            health: Health {
+                maximum: 100.0,
+                current: 100.0,
+            },
             mana: Mana {
                 maximum: 100.0,
                 current: 100.0,

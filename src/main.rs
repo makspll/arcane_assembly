@@ -15,6 +15,7 @@ use crate::{
     spells::GameSpellsPlugin,
     sprite::SpritesPlugin,
     state::ArcaneAssemblyGameStatePlugin,
+    ui::GameUiPlugin,
 };
 
 mod audio;
@@ -29,6 +30,7 @@ mod settings;
 mod spells;
 mod sprite;
 mod state;
+mod ui;
 
 fn main() -> AppExit {
     App::new().add_plugins(ArcaneAssemblyPlugin).run()
@@ -105,6 +107,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             GameAudioPlugin,
             GameSpellsPlugin,
             GameInputPlugin,
+            GameUiPlugin,
         ));
     }
 }
