@@ -6,10 +6,16 @@ local input_to_animation_map = {
     unknown = {"Idle", false, 0},
 }
 local STEP_SFX_PERIOD_SECONDS = 0.3
+local MIN_FIRE_DELAY_SECONDS = 0.16
+local MANA_CONSUMPTION = 50
+local MANA_RECOVERY_PER_FRAME = 1
 
 function on_script_loaded()
     state = {
+        mana_component = world.get_component(entity, types.Mana),
+
         animation_last_sound_time = 0,
+        fire_last_time = 0,
         animation = "Idle",
         animation_flip_x = false,
         spritesheet = world.load_asset_from_mod("Player", "sprites/wizard.ase"),
@@ -33,6 +39,10 @@ function on_update(dt, elapsed_seconds)
         state.animation_last_sound_time = elapsed_seconds
         world.play_sound_effect(state.sfx_step)
     end
+
+    local new_mana = math.min(state.mana_component.current + MANA_RECOVERY_PER_FRAME, state.mana_component.maximum)
+    state.mana_component.current = new_mana
+
 end
 
 function on_player_input(inputs, elapsed_seconds)
@@ -62,14 +72,24 @@ function on_player_input(inputs, elapsed_seconds)
         end
     end
 
-    if spell_fired then
-        ---@type MousePositionInWorldCoordinates
-        local mouse_pos = world.get_resource(types.MousePositionInWorldCoordinates)
-        ---@type GlobalTransform
-        local entity_transform =  world.get_component(entity, types.GlobalTransform)
-        local entity_world_pos_2d = entity_transform:translation():truncate()
-        local speed_m = 10
-        world.spawn_spell("Main", "fireball", mouse_pos[1], Vec2.new(mouse_pos[1].x - entity_world_pos_2d.x, 2) * speed_m)
-        world.play_sound_effect(state.sfx_crunch)
+    if spell_fired and (elapsed_seconds - state.fire_last_time > MIN_FIRE_DELAY_SECONDS) then
+        local new_mana = state.mana_component.current - MANA_CONSUMPTION
+        if new_mana <= 0 then
+            state.mana_component.current = 0
+            return
+        else
+            state.mana_component.current = new_mana
+            state.fire_last_time = elapsed_seconds
+
+            ---@type MousePositionInWorldCoordinates
+            local mouse_pos = world.get_resource(types.MousePositionInWorldCoordinates)
+            ---@type GlobalTransform
+            local entity_transform =  world.get_component(entity, types.GlobalTransform)
+            local entity_world_pos_2d = entity_transform:translation():truncate()
+            local speed_m = 10
+            world.spawn_spell("Main", "fireball", mouse_pos[1], Vec2.new(mouse_pos[1].x - entity_world_pos_2d.x, 2) * speed_m)
+        end
+
+
     end
 end

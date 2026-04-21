@@ -60,13 +60,15 @@ impl Plugin for ArcaneAssemblyPlugin {
                 .set(ImagePlugin::default_nearest()),
         );
 
-        #[cfg(debug_assertions)] // debug/dev builds only
+        // dev builds only, add anything we don't wanna ship into prod
+        #[cfg(feature = "dev_tools")]
         {
-            use bevy::diagnostic::LogDiagnosticsPlugin;
+            info!("running dev build");
+            use bevy_dev_tools::fps_overlay::FpsOverlayPlugin;
             use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
             use crate::scripts::systems::sync_dev_schema;
-            app.add_plugins(LogDiagnosticsPlugin::default())
+            app.add_plugins(FpsOverlayPlugin::default())
                 .add_plugins(EguiPlugin::default())
                 .add_plugins(WorldInspectorPlugin::new());
             // we can distribute this however, but it's nice to keep in sync automatically
@@ -91,8 +93,8 @@ impl Plugin for ArcaneAssemblyPlugin {
 
         // Game Plugins
         app.add_plugins((
-            ScriptLoaderPlugin,
             DevConsolePlugin,
+            ScriptLoaderPlugin,
             crate::camera::CameraPlugin,
             ArcaneAssemblyGameStatePlugin,
             CharacterPlugin,

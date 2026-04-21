@@ -2,6 +2,14 @@
 name = "arcane_assembly"
 version = "0.1.0"
 edition = "2024"
+default-run = "arcane_assembly"
+
+[features]
+default = ["dev_tools"]
+dev_tools = ["bevy_dev_tools"]
+
+[workspace]
+members = ["xtask/"]
 
 [dependencies]
 bevy = { version = "0.18", features = ["debug", "wav"] }
@@ -21,3 +29,5 @@ bevy_rapier2d = { version = "0.33.0", features = [
 bevy_aseprite_ultra = { version = "0.8", features = ["asset_processing"] }
 bevy-inspector-egui = { version = "0.36" }
 schemars = { version = "1.2" }
+bevy_dev_tools = {version = "0.18", optional = true}
+

@@ -7,13 +7,14 @@ use bevy_mod_scripting::{lua::LuaScriptingPlugin, prelude::event_handler};
 use crate::spells::{
     bindings::register_global_spells_functions,
     callbacks::{OnSpellCast, OnSpellExpired, OnSpellHitCharacter, OnSpellHitTerrain},
+    mana::Mana,
     spell::{trigger_spell_expirations, trigger_spell_hits},
 };
 
 mod bindings;
 pub mod callbacks;
+pub mod mana;
 pub mod spell;
-
 pub struct GameSpellsPlugin;
 
 impl Plugin for GameSpellsPlugin {
@@ -40,6 +41,8 @@ impl Plugin for GameSpellsPlugin {
             )
                 .chain(),
         );
+
+        app.register_type::<Mana>();
 
         register_global_spells_functions(app.world_mut());
     }

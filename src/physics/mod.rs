@@ -3,7 +3,6 @@ use bevy_rapier2d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     prelude::{Collider, CollisionGroups, Group},
     rapier::prelude::RigidBody,
-    render::RapierDebugRenderPlugin,
 };
 
 pub const UP: Vec2 = Vec2 { x: 0.0, y: 1.0 };
@@ -39,7 +38,13 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(
             PIXELS_PER_METER,
-        ))
-        .add_plugins(RapierDebugRenderPlugin::default());
+        ));
+
+        #[cfg(feature = "dev_tools")]
+        {
+            use bevy_rapier2d::render::RapierDebugRenderPlugin;
+
+            app.add_plugins(RapierDebugRenderPlugin::default());
+        }
     }
 }

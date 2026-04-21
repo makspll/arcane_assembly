@@ -50,7 +50,7 @@ pub enum SlotCount {
 
 /// A descriptor for a
 #[derive(Component, Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[component(on_add = Self::on_component_removed)]
+#[component(on_add = Self::on_component_added)]
 pub struct SpellComponentDescriptor {
     /// The name to show in the UI
     pub friendly_name: String,
@@ -79,7 +79,7 @@ pub struct SpellComponentDescriptor {
 }
 
 impl SpellComponentDescriptor {
-    pub fn on_component_removed(world: DeferredWorld, context: HookContext) {
+    pub fn on_component_added(world: DeferredWorld, context: HookContext) {
         Self::on_cast(world, context.entity)
     }
 

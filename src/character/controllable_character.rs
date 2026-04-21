@@ -1,6 +1,9 @@
-use crate::physics::{
-    self, DOWN, GRAVITY_ACCELERATION_IN_METERS, GRAVITY_ACCELERATION_IN_PIXELS, LEFT,
-    PIXELS_PER_METER, RIGHT, UP,
+use crate::{
+    physics::{
+        self, DOWN, GRAVITY_ACCELERATION_IN_METERS, GRAVITY_ACCELERATION_IN_PIXELS, LEFT,
+        PIXELS_PER_METER, RIGHT, UP,
+    },
+    spells::mana::Mana,
 };
 use bevy::{
     ecs::{
@@ -34,6 +37,7 @@ pub struct Character;
 #[derive(Bundle)]
 pub struct ControllableCharacter {
     marker: Character,
+    pub mana: Mana,
     pub scripts: ScriptComponent,
     pub controller: KinematicCharacterController,
     pub rigid_body: RigidBody,
@@ -44,6 +48,10 @@ pub struct ControllableCharacter {
 impl Default for ControllableCharacter {
     fn default() -> Self {
         Self {
+            mana: Mana {
+                maximum: 100.0,
+                current: 100.0,
+            },
             rigid_body: RigidBody::KinematicPositionBased,
             scripts: Default::default(),
             controller: KinematicCharacterController {
