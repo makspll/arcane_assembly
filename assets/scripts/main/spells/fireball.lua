@@ -1,4 +1,6 @@
 state = {
+    damage_per_hit = 10,
+    type_health_component = types.Health,
     sprite_fireball = world.load_asset_from_mod("Main", "sprites/fireball.ase"),
     sfx_fireball = world.load_asset_from_mod("Main", "audio/fireball_hit.wav")
 }
@@ -18,6 +20,12 @@ function on_spell_expired(entity)
 end
 
 function on_spell_hit_character(entity, other_entity)
+    print("hit character")
+    ---@type Health
+    local health = world.get_component(other_entity, state.type_health_component)
+    if health ~= nil then
+        health.current = health.current - state.damage_per_hit
+    end
 end
 
 

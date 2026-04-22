@@ -4,11 +4,15 @@ use bevy::{
     input::InputSystems,
 };
 
-use crate::character::controllable_character::{
-    ControllableCharacter, MovementInput, Player, handle_input, player_movement,
+use crate::character::{
+    controllable_character::{
+        ControllableCharacter, MovementInput, Player, handle_input, player_movement,
+    },
+    health::Health,
 };
 
 pub mod controllable_character;
+pub mod health;
 
 pub struct CharacterPlugin;
 
@@ -18,7 +22,7 @@ impl Plugin for CharacterPlugin {
             .add_systems(Startup, spawn_player_entity)
             .add_systems(PreUpdate, handle_input.after(InputSystems))
             .add_systems(FixedUpdate, player_movement);
-        app.register_type::<Player>();
+        app.register_type::<Player>().register_type::<Health>();
         // .add_systems(FixedUpdate, );
     }
 }

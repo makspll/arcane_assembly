@@ -7,8 +7,8 @@ local input_to_animation_map = {
 }
 local STEP_SFX_PERIOD_SECONDS = 0.3
 local MIN_FIRE_DELAY_SECONDS = 0.16
-local MANA_CONSUMPTION = 50
-local MANA_RECOVERY_PER_FRAME = 1
+local MANA_CONSUMPTION = 10
+local MANA_RECOVERY_PER_SECOND = 33
 
 function on_script_loaded()
     state = {
@@ -40,7 +40,7 @@ function on_update(dt, elapsed_seconds)
         world.play_sound_effect(state.sfx_step)
     end
 
-    local new_mana = math.min(state.mana_component.current + MANA_RECOVERY_PER_FRAME, state.mana_component.maximum)
+    local new_mana = math.min(state.mana_component.current + (MANA_RECOVERY_PER_SECOND * dt), state.mana_component.maximum)
     state.mana_component.current = new_mana
 
 end
@@ -75,7 +75,6 @@ function on_player_input(inputs, elapsed_seconds)
     if spell_fired and (elapsed_seconds - state.fire_last_time > MIN_FIRE_DELAY_SECONDS) then
         local new_mana = state.mana_component.current - MANA_CONSUMPTION
         if new_mana <= 0 then
-            state.mana_component.current = 0
             return
         else
             state.mana_component.current = new_mana
