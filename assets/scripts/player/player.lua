@@ -45,6 +45,9 @@ function on_update(dt, elapsed_seconds)
 
 end
 
+--Louis' Notes: I think this is only calling on the first frame a key is pressed - we probably want this to be called while keys are pressed?
+--this is based on the observation that if you move right and then start moving left before you release the right key then the animation does
+--not change and the player will be moving left but with the right facing sprite
 function on_player_input(inputs, elapsed_seconds)
     local highest_priority_animation = "Idle"
     local flip_sprite_final = state.animation_flip_x
