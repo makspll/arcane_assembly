@@ -91,9 +91,6 @@ pub struct IsJumping(bool);
 
 pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<MovementInput>, mut jumping: ResMut<IsJumping>, player: Query<Option<&KinematicCharacterControllerOutput>, With<Player>>) {
     **movement = Vec2::ZERO;
-    if keyboard.pressed(KeyCode::KeyW) {
-        **movement += UP;
-    }
     if keyboard.pressed(KeyCode::KeyS) {
         **movement += DOWN;
     }
@@ -113,7 +110,7 @@ pub fn handle_input(keyboard: Res<ButtonInput<KeyCode>>, mut movement: ResMut<Mo
         return;
     };
     // TODO: make controls moddable
-    if kinematic_state.is_some_and(|s| s.grounded) && (keyboard.just_pressed(KeyCode::Space) || keyboard.just_pressed(KeyCode::Backspace)) {
+    if kinematic_state.is_some_and(|s| s.grounded) && (keyboard.just_pressed(KeyCode::Space) || keyboard.just_pressed(KeyCode::Backspace) || keyboard.just_pressed(KeyCode::KeyW)) {
         **jumping = true;
     }
 }

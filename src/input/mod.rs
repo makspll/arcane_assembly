@@ -19,7 +19,7 @@ pub enum PlayerInput {
 impl From<&KeyCode> for PlayerInput {
     fn from(value: &KeyCode) -> Self {
         match value {
-            KeyCode::KeyW | KeyCode::Space => Self::Jump,
+            KeyCode::KeyW | KeyCode::Space | KeyCode::Backspace => Self::Jump,
             KeyCode::KeyA => Self::Left,
             KeyCode::KeyD => Self::Right,
             _ => PlayerInput::Unknown,
