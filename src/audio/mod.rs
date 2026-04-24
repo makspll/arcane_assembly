@@ -16,6 +16,7 @@ pub fn start_sound_effect(mut commands: Commands, source: Handle<AudioSource>) {
         AudioPlayer::new(source),
         PlaybackSettings {
             mode: bevy::audio::PlaybackMode::Despawn,
+            volume: bevy::audio::Volume::Linear(0.1), //because I value my eardrums
             ..Default::default()
         },
     ));
