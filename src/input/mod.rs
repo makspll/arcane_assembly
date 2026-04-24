@@ -7,6 +7,9 @@ use bevy_mod_scripting::prelude::ScriptValue;
 use crate::input::mouse::{MousePositionInWorldCoordinates, compute_mouse_world_position};
 pub mod mouse;
 
+// This is no good - it hardcodes user input to game action that I feel shouldn't be described here
+// what we want is to separate keyboard input and player action. i.e. game logic should determine
+// if the player is moving left, right, jumping, etc. not simply keyboard input as it is now.
 #[derive(Clone, Copy)]
 pub enum PlayerInput {
     Left,
