@@ -5,6 +5,7 @@ use bevy::{
 };
 
 use crate::character::controllable_character::{ControllableCharacter, MovementInput, Player, handle_input, player_movement, IsJumping};
+use crate::character::health::Health;
 
 pub mod controllable_character;
 pub mod health;
