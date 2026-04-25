@@ -4,7 +4,7 @@ use crate::{
         script_descriptor::ScriptDescriptor,
     },
     spells::{
-        dotgraph::mermaid_graph_to_abiliy_spell_graph,
+        dotgraph::dot_graph_to_spell_graph,
         executor::{CastSpell, Spell},
         spell::LiveSpell,
     },
@@ -39,7 +39,7 @@ impl World {
         let world = ctxt.world()?;
         world.with_resource(|descriptors: &LoadedScriptDescriptors| {
             world.with_resource(|assets: &Assets<ScriptDescriptor>| {
-                mermaid_graph_to_abiliy_spell_graph(&graph, &as_mod, descriptors, assets)
+                dot_graph_to_spell_graph(&graph, &as_mod, descriptors, assets)
                     .map_err(InteropError::string)
                     .map(V::new)
             })

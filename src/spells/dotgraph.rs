@@ -27,7 +27,7 @@ pub struct SpellGraphTransition {
     pub modifier_event: Option<String>,
 }
 
-pub fn mermaid_graph_to_abiliy_spell_graph(
+pub fn dot_graph_to_spell_graph(
     input: &str,
     current_mod_name: &str,
     descriptors: &LoadedScriptDescriptors,
