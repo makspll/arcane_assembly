@@ -15,7 +15,7 @@ members = ["xtask/"]
 bevy = { version = "0.18", features = ["debug", "wav"] }
 
 # serialization
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = { version = "1.0" }
 schemars = { version = "1.2" }
 
@@ -44,3 +44,4 @@ bevy-inspector-egui = { version = "0.36" }
 bevy_console = { version = "0.17" }
 bevy_dev_tools = {version = "0.18", optional = true}
 
+petgraph = {version = "0.8", features=["dot_parser"]}

@@ -2,11 +2,12 @@ use std::{
     error::Error,
     fmt::Display,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use bevy::{
     asset::{Asset, AssetPath, Assets, Handle, LoadedUntypedAsset},
-    reflect::TypePath,
+    reflect::{Reflect, TypePath},
 };
 use bevy_mod_scripting::asset::ScriptAsset;
 use schemars::JsonSchema;
@@ -31,7 +32,7 @@ pub struct ScriptDescriptor {
     pub script: Handle<ScriptAsset>,
     #[serde(skip_deserializing, skip_serializing, default)]
     pub assets: Vec<Handle<LoadedUntypedAsset>>,
-    pub spell_components: Vec<SpellComponentDescriptor>,
+    pub spell_components: Vec<Arc<SpellComponentDescriptor>>,
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
@@ -48,7 +49,18 @@ pub enum AttachKind {
 
 /// A [`PathBuf`] but pointing to a specific mod
 #[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, JsonSchema,
+    Debug,
+    Default,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    JsonSchema,
+    Reflect,
 )]
 pub struct ModPathBuf {
     pub mod_name: String,

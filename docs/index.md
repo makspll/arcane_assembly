@@ -18,19 +18,44 @@ The environment is highly randomised within reason, and many possible combinatio
 
 
 ### Spell & Ability building Mechanics
-The player has access to a set of **ability** slots (limited? unlimited?), which provide the player with the ability to combine **spells** and affect the environment. Whether that be:
+The player has access to a set of **spell** slots (limited? unlimited?), which provide the player with the ability to combine **Spell Components** and affect the environment. Whether that be:
 - Manipulating parts of the map
 - Inflicting damage on enemies
 - Moving the player or enemies around
 
-**Spells** are composed of **Components**, These could be:
+**Spells** are composed of **Spell Components**, These could be:
 - The payload (determines the projectile movement and sprite)
 - Trail (of other spells?, particles?)
 - Area effects (i.e. sphere around the projectile inflicts damage, which also provides a visual component)
 - Stat improvements (i.e. increased projectile speed, increased area of effect radius if present)
 - Utility effects (i.e. teleport shooter to location on impact, Heal impacted creature etc.)
 
-**Spells** are combined into abilities at a high level, for example an ability could combine a spell that fires a basic projectile, with a spell that creates a persistent area of effect damaging field at the location of impact, which also teleports nearby creatures to this same location.
+**Spell Components** are combined into spells at a high level, for example a spell could combine a component that fires a basic projectile, with a component that creates a persistent area of effect damaging field at the location of impact, which also teleports nearby creatures to this same location.
+
+**Spell Components** compose via **Children** slots, for example a "Sequence" spell might have 2 slots available, and any other **Spell Components** can be slotted into those slots.
+**Spell Component** nodes can also be **Modified** for example by adding follow up nodes on hit, or other events, this allows for complex behaviours to emerge.
+
+When "Sequence" is cast, its logic is run first, if there are any present, and then the childrens'. If the children have any of their own children, execution follows a depth-first-search pattern.
+
+An example spell tree which casts 3 fireballs in sequence, 3 times, with each last fireball, spawning an explosion at the hit location: 
+```json
+      "Loop x 3"
+          |
+      "Sequence"
+    /           \
+"Fireball"  "Sequence"
+            /          \
+        "Fireball"    "Fireball" 
+                          |
+                          | On Hit Modifier
+                          |
+                      "Explode"
+```
+
+Scripts that run these will live in the same context, meaning they can modify the current cast's properties.
+For example the execution might initialize `cast_location` to the wand tip, and a spell later might modify this. Notably this sort of context resets between after modifiers execute. So after a hit for example `cast_location` would reset to the hit location by the modifier, as this represents a new execution context. The way this context propagates itself can be a way to modify spell behaviour as needed.
+
+**Modifier** slots may be unlockable as the player progresses through the game. For example he may be given a choice to unlock a specific modifier for a subset of spells available. This forces the player to make interesting choices.
 
 ### Map Generation
 

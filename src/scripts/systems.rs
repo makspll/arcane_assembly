@@ -13,7 +13,7 @@ use bevy::{
         keyboard::{Key, KeyCode},
         mouse::MouseButton,
     },
-    log::{self, info},
+    log::{self, info, trace},
     platform::collections::{HashMap, HashSet},
     state::state::NextState,
     time::{Real, Time},
@@ -29,6 +29,7 @@ use schemars::schema_for;
 use std::{
     collections::VecDeque,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use crate::{
@@ -151,7 +152,13 @@ pub fn load_external_dependencies_in_mods(
                 .script_controller_path
                 .asset_path(&loaded_script_descriptors, &descriptors)
             {
-                Ok(resolved) => asset_server.load(resolved),
+                Ok(resolved) => {
+                    trace!(
+                        "Resolving script controller path: {}, with: {}",
+                        spell_component.script_controller_path, resolved
+                    );
+                    asset_server.load(resolved)
+                }
                 Err(err) => {
                     log::error!(
                         "Failed to resolve script dependency in mod: '{}', on spell_component_controller: '{}': {err}",
@@ -169,10 +176,14 @@ pub fn load_external_dependencies_in_mods(
     // apply resolutions
     for ((asset_id, spell_component_idx), resolved_script) in script_resolutions {
         let asset = descriptors
-            .get_mut(asset_id)
+            .get_mut_untracked(asset_id)
             .expect("invariant broken: previously resolved asset missing");
-        asset.spell_components[spell_component_idx].script_controller_handle =
-            Some(resolved_script);
+        // could do a mutex or some shit, but this should really only be read only after loading
+        // I think reloading might be weird though because arc will get re-created, so remaining handles will point to old spell component
+        // maybe that's good
+        let mut cloned = (*asset.spell_components[spell_component_idx]).clone();
+        cloned.script_controller_handle = Some(resolved_script);
+        asset.spell_components[spell_component_idx] = Arc::new(cloned);
     }
 
     for script in static_scripts_to_attach.drain() {

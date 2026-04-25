@@ -9,6 +9,7 @@
     "spellComponents": [
         {
             "friendly_name": "fireball",
+            "handler_label": "main_fireball",
             "script_controller_path": {
                 "mod_name": "Main",
                 "path": "spells/fireball.lua"

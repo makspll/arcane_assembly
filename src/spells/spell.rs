@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::{
     asset::Handle,
     ecs::{
@@ -8,11 +10,14 @@ use bevy::{
         message::{MessageReader, MessageWriter},
         name::Name,
         query::With,
+        reflect::ReflectComponent,
         system::{Commands, Query, Res, ResMut, Single},
         world::{DeferredWorld, Mut, Ref, World},
     },
     log,
     math::Vec2,
+    prelude::{Deref, DerefMut},
+    reflect::Reflect,
     sprite::Sprite,
     time::{Time, Virtual},
     transform::components::Transform,
@@ -34,13 +39,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    character::controllable_character::Character,
-    physics::CollisionGroup,
-    scripts::script_descriptor::ModPathBuf,
-    spells::callbacks::{OnSpellCast, OnSpellExpired, OnSpellHitCharacter, OnSpellHitTerrain},
+    character::controllable_character::Character, physics::CollisionGroup,
+    scripts::script_descriptor::ModPathBuf, spells::executor::AbilityExecutionId,
 };
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, Default, Reflect)]
 pub enum SlotCount {
     #[default]
     None,
@@ -48,12 +51,24 @@ pub enum SlotCount {
     FixedAmount(usize),
 }
 
+/// A reference to a spell component descriptor, used to avoid cloning excessively, and reduce stack size of structs
+#[derive(Reflect, Clone, Deref, DerefMut, Debug)]
+pub struct SpellComponentDescriptorHandle(pub Arc<SpellComponentDescriptor>);
+
+impl From<SpellComponentDescriptor> for SpellComponentDescriptorHandle {
+    fn from(value: SpellComponentDescriptor) -> Self {
+        Self(Arc::new(value))
+    }
+}
+
 /// A descriptor for a
-#[derive(Component, Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[component(on_add = Self::on_component_added)]
+#[derive(Clone, Default, Serialize, Deserialize, JsonSchema, Reflect)]
 pub struct SpellComponentDescriptor {
     /// The name to show in the UI
     pub friendly_name: String,
+    /// The postfix to give to every handler for this spell. For example if this name is 'my_spell' then the handler for casting the spell
+    /// would have to be called "on_cast_my_spell", and similar for all the other spell callbacks.
+    pub handler_label: String,
     /// the path to an icon within the mod that can be shown in the UI, if not provided a placeholder will be used
     pub icon_sprite_path: Option<ModPathBuf>,
     /// The controller script for this component.
@@ -78,103 +93,37 @@ pub struct SpellComponentDescriptor {
     pub area_of_effect_meters: f32,
 }
 
-impl SpellComponentDescriptor {
-    pub fn on_component_added(world: DeferredWorld, context: HookContext) {
-        Self::on_cast(world, context.entity)
-    }
-
-    pub fn on_cast(mut world: DeferredWorld, entity: Entity) {
-        if let Ok(entity_ref) = world.get_entity(entity)
-            && let Some(descriptor) = entity_ref.get::<Self>()
-            && let Some(controller) = &descriptor.script_controller_handle
-        {
-            let allocator_guard = world.resource::<AppReflectAllocator>();
-            let mut allocator = allocator_guard.write();
-            let entity = ReflectReference::new_allocated(entity_ref.id(), &mut allocator);
-            drop(allocator);
-            world.write_message(ScriptCallbackEvent::new_for_static_script(
-                OnSpellCast,
-                vec![ScriptValue::Reference(entity)],
-                controller.clone(),
-            ));
-        } else {
-            log::error!(
-                "spell inserted but could not identify controller script. will not trigger insert callback.",
-            );
-        }
-    }
-
-    pub fn on_expire(&self, commands: &mut Commands, entity: Entity) {
-        if let Some(controller) = self.script_controller_handle.clone() {
-            commands.queue(move |world: &mut World| {
-                let allocator_guard = world.resource::<AppReflectAllocator>();
-                let mut allocator = allocator_guard.write();
-                let entity = ReflectReference::new_allocated(entity, &mut allocator);
-                drop(allocator);
-                world.write_message(ScriptCallbackEvent::new_for_static_script(
-                    OnSpellExpired,
-                    vec![ScriptValue::Reference(entity)],
-                    controller.clone(),
-                ));
-            });
-        } else {
-            log::error!(
-                "spell expired but could not identify controller script. Will not trigger expire callback.",
-            );
-        }
-    }
-
-    pub fn on_collision(&self, commands: &mut Commands, entity: Entity, other_entity: Entity) {
-        if let Some(controller) = self.script_controller_handle.clone() {
-            commands.queue(move |world: &mut World| {
-                if let Ok(other_entity_ref) = world.get_entity(other_entity) {
-                    let allocator_guard = world.resource::<AppReflectAllocator>();
-                    let mut allocator = allocator_guard.write();
-                    let entity = ReflectReference::new_allocated(entity, &mut allocator);
-                    let other_entity =
-                        ReflectReference::new_allocated(other_entity, &mut allocator);
-                    drop(allocator);
-                    let payload = vec![
-                        ScriptValue::Reference(entity),
-                        ScriptValue::Reference(other_entity),
-                    ];
-                    if other_entity_ref.contains::<Character>() {
-                        world.write_message(ScriptCallbackEvent::new_for_static_script(
-                            OnSpellHitCharacter,
-                            payload,
-                            controller,
-                        ));
-                    } else {
-                        world.write_message(ScriptCallbackEvent::new_for_static_script(
-                            OnSpellHitTerrain,
-                            payload,
-                            controller,
-                        ));
-                    }
-                }
-            });
-        } else {
-            log::error!(
-                "spell hit triggered but could not identify controller script. Will not trigger hit callback.",
-            );
-        }
+impl std::fmt::Debug for SpellComponentDescriptor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SpellComponentDescriptor")
+            .field("friendly_name", &self.friendly_name)
+            .field("handler_label", &self.handler_label)
+            .field("script_controller_path", &self.script_controller_path)
+            .finish()
     }
 }
 
 #[derive(Component)]
 pub struct WithLifetime {
     /// The elapsed wrapping virtual time at which this lifetime was started
-    start_at: f64,
+    pub start_at: f64,
     /// the time in seconds to keep this lifetime for
-    lifetime_seconds: f64,
+    pub lifetime_seconds: f64,
     /// if true is already expired
-    expired: bool,
+    pub expired: bool,
+}
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct ExecutingSpellComponent {
+    pub descriptor: SpellComponentDescriptorHandle,
+    pub execution_id: AbilityExecutionId,
 }
 
 /// A spell component instantiated
 #[derive(Bundle)]
 pub struct LiveSpell {
-    pub descriptor: SpellComponentDescriptor,
+    pub spell_component: ExecutingSpellComponent,
     pub lifetime: WithLifetime,
     pub colider: Collider,
     pub collision_flags: ActiveCollisionTypes,
@@ -195,10 +144,11 @@ impl LiveSpell {
     /// - a starting velocity
     /// - A sprite
     pub fn new(
+        execution_id: AbilityExecutionId,
         position: Vec2,
         velocity: Vec2,
         time: &Time<Virtual>,
-        descriptor: SpellComponentDescriptor,
+        descriptor: SpellComponentDescriptorHandle,
     ) -> Self {
         let diameter = 0.1;
         Self {
@@ -208,8 +158,10 @@ impl LiveSpell {
                 expired: false,
                 lifetime_seconds: descriptor.lifetime_milliseconds as f64 / 1000.,
             },
-            descriptor,
-
+            spell_component: ExecutingSpellComponent {
+                descriptor,
+                execution_id,
+            },
             colider: Collider::ball(diameter / 2.),
             rigid_body: RigidBody::Dynamic,
             sprite: Sprite {
@@ -232,60 +184,6 @@ impl LiveSpell {
                 .collect(),
             ),
             active_collision_events: ActiveEvents::COLLISION_EVENTS,
-        }
-    }
-}
-
-pub fn trigger_spell_expirations(
-    mut commands: Commands,
-    time: Res<Time<Virtual>>,
-    mut spells: Query<(Entity, Ref<SpellComponentDescriptor>, Mut<WithLifetime>)>,
-) {
-    let current_time = time.elapsed_secs_wrapped_f64();
-
-    for (entity, spell, mut lifetime) in spells.iter_mut() {
-        if lifetime.expired {
-            continue;
-        }
-
-        // abs due to possible wrapping
-        let diff = (lifetime.start_at - current_time).abs();
-        if diff <= lifetime.lifetime_seconds {
-            continue;
-        }
-
-        lifetime.expired = true;
-
-        spell.on_expire(&mut commands, entity);
-    }
-}
-
-// rapier also does Contact events, but those require keeping track of entities we care about in map or something.
-// here because we know these are short lived, it might be better to go from the projectiles themselvevs, and check.
-// the collision graph is gonna be hella optiimzed for this.
-pub fn trigger_spell_hits(
-    mut commands: Commands,
-    collidable_spells: Query<
-        (Entity, Ref<SpellComponentDescriptor>),
-        With<SpellComponentDescriptor>,
-    >,
-    mut collisions: MessageReader<CollisionEvent>,
-    // mut physics_context: Single<Ref<RapierContextSimulation>>,
-) {
-    // there is also CollidingEntities as a component, which can be inserted and rapier will do this for us
-    // but we'd need to manually workout which collisions are new each frame
-    for collision in collisions.read() {
-        // do something on stopped too ?
-        if let CollisionEvent::Started(e1, e2, _) = collision {
-            let (main_entity, other_entity, spell) =
-                if let Ok((entity, spell)) = collidable_spells.get(*e1) {
-                    (entity, e2, spell)
-                } else if let Ok((entity, spell)) = collidable_spells.get(*e2) {
-                    (entity, e1, spell)
-                } else {
-                    continue;
-                };
-            spell.on_collision(&mut commands, main_entity, *other_entity);
         }
     }
 }

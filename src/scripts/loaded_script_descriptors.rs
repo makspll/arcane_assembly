@@ -9,7 +9,8 @@ use bevy::{
 };
 
 use crate::{
-    scripts::script_descriptor::ScriptDescriptor, spells::spell::SpellComponentDescriptor,
+    scripts::script_descriptor::ScriptDescriptor,
+    spells::spell::{SpellComponentDescriptor, SpellComponentDescriptorHandle},
 };
 
 /// Exists to keep asset handles alive
@@ -38,22 +39,26 @@ impl LoadedScriptDescriptors {
     }
 
     /// Finds the descriptor corresponding to a named mod, if it is loaded
-    pub fn get_mod_spell_by_name<'a>(
+    pub fn get_spell_component_by_name<'a>(
         &self,
         name: &str,
-        spell: &str,
+        spell_component: &str,
         assets: &'a Assets<ScriptDescriptor>,
-    ) -> Option<&'a SpellComponentDescriptor> {
-        self.descriptors.iter().find_map(|handle| {
-            assets
-                .get(handle)
-                .filter(|descriptor| descriptor.name == name)
-                .and_then(|descriptor| {
-                    descriptor
-                        .spell_components
-                        .iter()
-                        .find(|d| d.friendly_name == spell)
-                })
-        })
+    ) -> Option<SpellComponentDescriptorHandle> {
+        self.descriptors
+            .iter()
+            .find_map(|handle| {
+                assets
+                    .get(handle)
+                    .filter(|descriptor| descriptor.name == name)
+                    .and_then(|descriptor| {
+                        descriptor
+                            .spell_components
+                            .iter()
+                            .find(|d| d.friendly_name == spell_component)
+                    })
+            })
+            .cloned()
+            .map(SpellComponentDescriptorHandle)
     }
 }
