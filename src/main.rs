@@ -15,6 +15,7 @@ use crate::{
     spells::GameSpellsPlugin,
     sprite::SpritesPlugin,
     state::ArcaneAssemblyGameStatePlugin,
+    system_sets::GameSystemSetPlugin,
     ui::GameUiPlugin,
 };
 
@@ -30,6 +31,7 @@ mod settings;
 mod spells;
 mod sprite;
 mod state;
+mod system_sets;
 mod ui;
 
 fn main() -> AppExit {
@@ -77,18 +79,6 @@ impl Plugin for ArcaneAssemblyPlugin {
             app.add_systems(Startup, sync_dev_schema);
         }
 
-        // Bevy Mod Scripting Framework
-        app.add_plugins(BMSPlugin.set::<ScriptingFilesGenerationPlugin>(
-            ScriptingFilesGenerationPlugin::new(
-                true, // enabled, you can use a compilation feature to disable this here
-                PathBuf::from("assets").join("definitions"),
-                Some(PathBuf::from("bindings.lad.json")), // do also save the ladfile itself
-                "Arcane Assembly LUA Interface",
-                true,
-                true,
-            ),
-        ));
-
         // Dependencies
         app.add_plugins(AsepriteUltraPlugin);
         // app.register_type::<Aseprite>();
@@ -108,6 +98,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             GameSpellsPlugin,
             GameInputPlugin,
             GameUiPlugin,
+            GameSystemSetPlugin,
         ));
     }
 }

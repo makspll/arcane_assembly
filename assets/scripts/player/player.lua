@@ -9,9 +9,22 @@ local STEP_SFX_PERIOD_SECONDS = 0.3
 local MIN_FIRE_DELAY_SECONDS = 0.16
 local MANA_CONSUMPTION = 10
 local MANA_RECOVERY_PER_SECOND = 33
+local SPELL_TEXT = [[
+digraph {
+    Start [label="fireball"]
+    B [label="fireball"]
+    C [label="fireball"]
+
+    Start -> B 
+    Start -> B
+    B -> C [label="on_hit_terrain"]
+    B -> C [label="on_hit_character"]
+}
+]]
 
 function on_script_loaded()
     state = {
+        spell_graph = nil,
         mana_component = world.get_component(entity, types.Mana),
 
         animation_last_sound_time = 0,
@@ -46,6 +59,12 @@ function on_update(dt, elapsed_seconds)
 end
 
 function on_player_input(inputs, elapsed_seconds)
+    -- TOOD: start callback
+    if state.spell_graph == nil then
+        state.spell_graph = world.parse_spell("Main", SPELL_TEXT)
+        log_info(tostring(state.spell_graph))
+    end
+
     local highest_priority_animation = "Idle"
     local flip_sprite_final = state.animation_flip_x
     local max_priority = -1
@@ -86,7 +105,12 @@ function on_player_input(inputs, elapsed_seconds)
             local entity_transform =  world.get_component(entity, types.GlobalTransform)
             local entity_world_pos_2d = entity_transform:translation():truncate()
             local speed_m = 10
-            world.spawn_spell("Main", "fireball", mouse_pos[1], Vec2.new(mouse_pos[1].x - entity_world_pos_2d.x, 2) * speed_m)
+
+            world.cast_spell(
+                state.spell_graph,
+                mouse_pos[1],
+                Vec2.new(mouse_pos[1].x - entity_world_pos_2d.x, 2) * speed_m
+            )
         end
 
 

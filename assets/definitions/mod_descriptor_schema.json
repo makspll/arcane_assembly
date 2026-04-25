@@ -120,6 +120,10 @@
           "description": "The name to show in the UI",
           "type": "string"
         },
+        "handler_label": {
+          "description": "The postfix to give to every handler for this spell. For example if this name is 'my_spell' then the handler for casting the spell\nwould have to be called \"on_cast_my_spell\", and similar for all the other spell callbacks.",
+          "type": "string"
+        },
         "icon_sprite_path": {
           "description": "the path to an icon within the mod that can be shown in the UI, if not provided a placeholder will be used",
           "anyOf": [
@@ -148,6 +152,7 @@
       },
       "required": [
         "friendly_name",
+        "handler_label",
         "script_controller_path",
         "mana_drain_per_shot",
         "delay_milliseconds",

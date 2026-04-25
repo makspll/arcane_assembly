@@ -307,6 +307,7 @@ dependencies = [
  "bevy_lunex",
  "bevy_mod_scripting",
  "bevy_rapier2d",
+ "petgraph",
  "schemars",
  "serde",
  "serde_json",
@@ -3275,7 +3276,32 @@ version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61"
 dependencies = [
- "litrs",
+ "litrs 1.0.0",
+]
+
+[[package]]
+name = "dot-parser"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cce83b336cd8d9b2718f4e8228a185de6e7a1cfe34f237e8c4acaf1c4141630"
+dependencies = [
+ "either",
+ "pest",
+ "pest_derive",
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
+name = "dot-parser-macros"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5f46b58a6249ec5f7102770351aeca8eef2a3093872bb8eec1eb9e0b432d260"
+dependencies = [
+ "dot-parser",
+ "litrs 0.4.2",
+ "proc-macro2",
+ "quote",
 ]
 
 [[package]]
@@ -4866,6 +4892,15 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "litrs"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5e54036fe321fd421e10d732f155734c4e4afd610dd556d9a82833ab3ee0bed"
+dependencies = [
+ "proc-macro2",
+]
+
+[[package]]
+name = "litrs"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
@@ -5985,6 +6020,8 @@ version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
 dependencies = [
+ "dot-parser",
+ "dot-parser-macros",
  "fixedbitset",
  "hashbrown 0.15.5",
  "indexmap",
