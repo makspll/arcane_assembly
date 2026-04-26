@@ -9,8 +9,8 @@ use crate::{
     console::DevConsolePlugin,
     input::GameInputPlugin,
     map::MapPlugin,
+    mods::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
     physics::PhysicsPlugin,
-    scripts::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
     settings::WindowSettings,
     spells::GameSpellsPlugin,
     sprite::SpritesPlugin,
@@ -25,8 +25,8 @@ mod character;
 mod console;
 mod input;
 mod map;
+mod mods;
 mod physics;
-mod scripts;
 mod settings;
 mod spells;
 mod sprite;
@@ -71,7 +71,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             use bevy_dev_tools::fps_overlay::FpsOverlayPlugin;
             use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
-            use crate::scripts::systems::sync_dev_schema;
+            use crate::mods::systems::sync_dev_schema;
             app.add_plugins(FpsOverlayPlugin::default())
                 .add_plugins(EguiPlugin::default())
                 .add_plugins(WorldInspectorPlugin::new());

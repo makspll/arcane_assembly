@@ -21,9 +21,9 @@ use bevy_lunex::prelude::*;
 use crate::{
     camera::{MAIN_CAMERA_ORDER, UI_CAMERA_ORDER},
     character::{controllable_character::Player, health::Health},
-    scripts::{
-        loaded_script_descriptors::{self, LoadedScriptDescriptors},
-        script_descriptor::{ModPathBuf, ScriptDescriptor},
+    mods::{
+        mod_descriptor_loaded_assets::{self, ModDescriptorLoadedAssets},
+        mod_descriptor_asset::{ModDescriptorAsset, ModPathBuf},
     },
     spells::mana::Mana,
 };
@@ -89,8 +89,8 @@ pub fn spawn_player_interface(
     asset_server: Res<AssetServer>,
     config: Res<GameUiConfig>,
     colors: Res<GameUiColors>,
-    loaded_script_descriptors: Res<LoadedScriptDescriptors>,
-    descriptor_assets: Res<Assets<ScriptDescriptor>>,
+    loaded_script_descriptors: Res<ModDescriptorLoadedAssets>,
+    descriptor_assets: Res<Assets<ModDescriptorAsset>>,
 ) {
     let font_path = ModPathBuf::new_mod_assets_path("Main", "fonts/edit_undo/editundo.ttf");
 

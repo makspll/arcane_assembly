@@ -1,6 +1,6 @@
 //! Wrappers for bevy_aseprite types which support reflection
 
-use crate::scripts::assets::ScriptHandleWrapper;
+use crate::mods::assets::ScriptHandleWrapper;
 use bevy::{
     asset::Handle,
     ecs::{bundle::Bundle, entity::Entity, system::Commands},

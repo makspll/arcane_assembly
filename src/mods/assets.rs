@@ -1,5 +1,5 @@
-use crate::scripts::{
-    loaded_script_descriptors::LoadedScriptDescriptors, script_descriptor::ScriptDescriptor,
+use crate::mods::{
+    mod_descriptor_loaded_assets::ModDescriptorLoadedAssets, mod_descriptor_asset::ModDescriptorAsset,
 };
 use bevy::{
     asset::{
@@ -75,8 +75,8 @@ impl<T: Asset> FromScript for ScriptHandleWrapper<T> {
 pub fn load_untyped_asset_for_script_descriptor(
     mod_name: &str,
     path: &str,
-    script_descriptor_assets: &Assets<ScriptDescriptor>,
-    loaded_script_descriptors: &LoadedScriptDescriptors,
+    script_descriptor_assets: &Assets<ModDescriptorAsset>,
+    loaded_script_descriptors: &ModDescriptorLoadedAssets,
     asset_server: Mut<AssetServer>,
 ) -> Result<Option<Handle<LoadedUntypedAsset>>, ParseAssetPathError> {
     let opt_descriptor_and_handle =

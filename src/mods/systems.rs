@@ -35,9 +35,9 @@ use std::{
 use crate::{
     character::controllable_character::Player,
     input::PlayerInput,
-    scripts::{
-        loaded_script_descriptors::LoadedScriptDescriptors,
-        script_descriptor::{AttachKind, ScriptDescriptor, ScriptKind},
+    mods::{
+        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
+        mod_descriptor_asset::{AttachKind, ModDescriptorAsset, ScriptKind},
     },
     state::GameState,
 };
@@ -47,8 +47,8 @@ pub fn activate_core_scripts(
     mut started: Local<bool>,
     pipeline_state: ScriptPipelineState<LuaScriptingPlugin>,
     mut next_state: ResMut<NextState<GameState>>,
-    loaded_script_descriptors: ResMut<LoadedScriptDescriptors>,
-    script_descriptor_assets: Res<Assets<ScriptDescriptor>>,
+    loaded_script_descriptors: ResMut<ModDescriptorLoadedAssets>,
+    script_descriptor_assets: Res<Assets<ModDescriptorAsset>>,
     player: Query<Entity, With<Player>>,
     mut commands: Commands,
 ) {
@@ -92,7 +92,7 @@ pub fn activate_core_scripts(
 }
 
 pub fn sync_dev_schema() {
-    let schema = serde_json::to_string_pretty(&schema_for!(ScriptDescriptor))
+    let schema = serde_json::to_string_pretty(&schema_for!(ModDescriptorAsset))
         .expect("Failed to serialize mod schema");
     let path = asset_root_path()
         .join("definitions")
@@ -107,7 +107,7 @@ pub fn asset_root_path() -> PathBuf {
 /// Initializes script loading expecting mod descriptors, and only loading the lua scripts that correspond to each descriptor
 pub fn init_load_of_all_script_mods(
     mut server: ResMut<AssetServer>,
-    mut loaded_script_descriptors: ResMut<LoadedScriptDescriptors>,
+    mut loaded_script_descriptors: ResMut<ModDescriptorLoadedAssets>,
 ) {
     // TODO: when bevy supports loading a specific type of extension / asset type from a folder, use that instead
     // I imagine this would cause issues on non standard platforms
@@ -137,12 +137,12 @@ pub fn init_load_of_all_script_mods(
 /// Ideally we should also re-do this if new assets are added, but that's rare enough it's probably fine, downstream changes to the script will re-load the script itself.
 pub fn load_external_dependencies_in_mods(
     mut commands: Commands,
-    loaded_script_descriptors: Res<LoadedScriptDescriptors>,
-    mut descriptors: ResMut<Assets<ScriptDescriptor>>,
+    loaded_script_descriptors: Res<ModDescriptorLoadedAssets>,
+    mut descriptors: ResMut<Assets<ModDescriptorAsset>>,
     mut next_state: ResMut<NextState<GameState>>,
     asset_server: Res<AssetServer>,
 ) {
-    let mut script_resolutions: HashMap<(AssetId<ScriptDescriptor>, usize), Handle<ScriptAsset>> =
+    let mut script_resolutions: HashMap<(AssetId<ModDescriptorAsset>, usize), Handle<ScriptAsset>> =
         Default::default();
     let mut static_scripts_to_attach: HashSet<Handle<ScriptAsset>> = Default::default();
 

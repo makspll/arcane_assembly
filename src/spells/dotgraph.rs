@@ -1,7 +1,7 @@
 
 use crate::{
-    scripts::{
-        loaded_script_descriptors::LoadedScriptDescriptors, script_descriptor::ScriptDescriptor,
+    mods::{
+        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets, mod_descriptor_asset::ModDescriptorAsset,
     },
     spells::{
         executor::{Spell},
@@ -30,8 +30,8 @@ pub struct SpellGraphTransition {
 pub fn dot_graph_to_spell_graph(
     input: &str,
     current_mod_name: &str,
-    descriptors: &LoadedScriptDescriptors,
-    assets: &Assets<ScriptDescriptor>,
+    descriptors: &ModDescriptorLoadedAssets,
+    assets: &Assets<ModDescriptorAsset>,
 ) -> Result<Spell, String> {
     let dot_graph = parse_raw_graph(input)?;
     // nodes have id's and "label" attributes we interpret as comma separated mod name and spell name

@@ -1,6 +1,6 @@
 use crate::{
-    scripts::{
-        script_descriptor::ScriptDescriptor,
+    mods::{
+        mod_descriptor_asset::ModDescriptorAsset,
         systems::{asset_root_path, recurse_dirs},
     },
     spells::spell,
@@ -14,10 +14,10 @@ use bevy::{
 #[derive(TypePath)]
 /// Loader which produces [`ScriptDescriptor`] assets, with the underlying scripts as asset dependencies.
 /// This allows us to plug in metadata, and control script loading via the expected mod structure.
-pub struct ScriptDescriptorAssetLoader;
+pub struct ModDescriptorAssetLoader;
 
-impl AssetLoader for ScriptDescriptorAssetLoader {
-    type Asset = ScriptDescriptor;
+impl AssetLoader for ModDescriptorAssetLoader {
+    type Asset = ModDescriptorAsset;
     type Settings = ();
 
     type Error = BevyError;
@@ -32,7 +32,7 @@ impl AssetLoader for ScriptDescriptorAssetLoader {
 
         reader.read_to_end(&mut buf).await?;
 
-        let mut asset: ScriptDescriptor =
+        let mut asset: ModDescriptorAsset =
             serde_json::de::from_slice(&buf).map_err(BevyError::from)?;
 
         let asset_path = load_context.path().path();
