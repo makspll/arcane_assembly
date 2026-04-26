@@ -33,7 +33,7 @@ impl ModDescriptorLoadedAssets {
         self.descriptors.iter().find_map(|handle| {
             assets
                 .get(handle)
-                .filter(|descriptr| descriptr.name == name)
+                .filter(|descriptor| descriptor.descriptor.name == name)
                 .map(|descriptor| (descriptor, handle.clone()))
         })
     }
@@ -50,9 +50,10 @@ impl ModDescriptorLoadedAssets {
             .find_map(|handle| {
                 assets
                     .get(handle)
-                    .filter(|descriptor| descriptor.name == name)
+                    .filter(|descriptor| descriptor.descriptor.name == name)
                     .and_then(|descriptor| {
                         descriptor
+                            .descriptor
                             .spell_components
                             .iter()
                             .find(|d| d.friendly_name == spell_component)

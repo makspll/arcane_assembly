@@ -2,7 +2,8 @@ use bevy::{asset::Assets, ecs::system::Res};
 use bevy_console::{ConsoleCommand, clap};
 
 use crate::mods::{
-    mod_descriptor_loaded_assets::ModDescriptorLoadedAssets, mod_descriptor_asset::ModDescriptorAsset,
+    mod_descriptor_asset::ModDescriptorAsset,
+    mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
 };
 
 #[derive(clap::Parser, ConsoleCommand)]
@@ -18,7 +19,10 @@ pub fn list_mods_cmd(
         for descriptor in &descriptors.descriptors {
             match descriptor_assets.get(descriptor) {
                 Some(asset) => {
-                    log.reply(format!("\t - {}, {}", asset.name, asset.description));
+                    log.reply(format!(
+                        "\t - {}, {}",
+                        asset.descriptor.name, asset.descriptor.description
+                    ));
                 }
                 None => {
                     log.reply("\t - Unloaded Mod");

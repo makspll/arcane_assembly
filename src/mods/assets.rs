@@ -1,5 +1,6 @@
 use crate::mods::{
-    mod_descriptor_loaded_assets::ModDescriptorLoadedAssets, mod_descriptor_asset::ModDescriptorAsset,
+    mod_descriptor_asset::ModDescriptorAsset,
+    mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
 };
 use bevy::{
     asset::{
@@ -97,14 +98,6 @@ pub fn load_untyped_asset_for_script_descriptor(
 
             info!("Loading asset for mod: {mod_name}, from: '{mod_relative_asset_path}'");
 
-            if let Some(cached) = descriptor
-                .assets
-                .iter()
-                .find(|h| h.path() == Some(&mod_relative_asset_path))
-            {
-                return Ok(Some(cached.clone()));
-            }
-            // TODO: cache
             Ok(Some(asset_server.load_untyped(mod_relative_asset_path)))
         }
         _ => Ok(None),

@@ -36,8 +36,8 @@ use crate::{
     character::controllable_character::Player,
     input::PlayerInput,
     mods::{
+        mod_descriptor_asset::{AttachKind, ModDescriptor, ModDescriptorAsset, ScriptKind},
         mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
-        mod_descriptor_asset::{AttachKind, ModDescriptorAsset, ScriptKind},
     },
     state::GameState,
 };
@@ -60,10 +60,10 @@ pub fn activate_core_scripts(
         info!("Initializing core scripts");
         for descriptor in &loaded_script_descriptors.descriptors {
             if let Some(descriptor_asset) = script_descriptor_assets.get(descriptor)
-                && descriptor_asset.kind == ScriptKind::Core
+                && descriptor_asset.descriptor.kind == ScriptKind::Core
             {
                 let handle = descriptor_asset.script.clone();
-                match descriptor_asset.attach_kind {
+                match descriptor_asset.descriptor.attach_kind {
                     AttachKind::Static => {
                         commands.queue(AttachScript::<LuaScriptingPlugin>::new(
                             bevy_mod_scripting::script::ScriptAttachment::StaticScript(
@@ -92,7 +92,7 @@ pub fn activate_core_scripts(
 }
 
 pub fn sync_dev_schema() {
-    let schema = serde_json::to_string_pretty(&schema_for!(ModDescriptorAsset))
+    let schema = serde_json::to_string_pretty(&schema_for!(ModDescriptor))
         .expect("Failed to serialize mod schema");
     let path = asset_root_path()
         .join("definitions")
@@ -147,7 +147,7 @@ pub fn load_external_dependencies_in_mods(
     let mut static_scripts_to_attach: HashSet<Handle<ScriptAsset>> = Default::default();
 
     for (asset_id, asset) in descriptors.iter() {
-        for (idx, spell_component) in asset.spell_components.iter().enumerate() {
+        for (idx, spell_component) in asset.descriptor.spell_components.iter().enumerate() {
             let resolution = match spell_component
                 .script_controller_path
                 .asset_path(&loaded_script_descriptors, &descriptors)
@@ -162,7 +162,7 @@ pub fn load_external_dependencies_in_mods(
                 Err(err) => {
                     log::error!(
                         "Failed to resolve script dependency in mod: '{}', on spell_component_controller: '{}': {err}",
-                        asset.name,
+                        asset.descriptor.name,
                         spell_component.script_controller_path
                     );
                     continue;
@@ -181,9 +181,9 @@ pub fn load_external_dependencies_in_mods(
         // could do a mutex or some shit, but this should really only be read only after loading
         // I think reloading might be weird though because arc will get re-created, so remaining handles will point to old spell component
         // maybe that's good
-        let mut cloned = (*asset.spell_components[spell_component_idx]).clone();
+        let mut cloned = (*asset.descriptor.spell_components[spell_component_idx]).clone();
         cloned.script_controller_handle = Some(resolved_script);
-        asset.spell_components[spell_component_idx] = Arc::new(cloned);
+        asset.descriptor.spell_components[spell_component_idx] = Arc::new(cloned);
     }
 
     for script in static_scripts_to_attach.drain() {

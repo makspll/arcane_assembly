@@ -18,20 +18,22 @@ use crate::{
     spells::spell::SpellComponentDescriptor,
 };
 
-/// A descriptor for a mod really. Maybe rename to ModDescriptor.
-#[derive(Clone, Serialize, Deserialize, Asset, TypePath, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[derive(Asset, TypePath)]
 pub struct ModDescriptorAsset {
+    pub descriptor: ModDescriptor,
+    pub script: Handle<ScriptAsset>,
+}
+
+/// Describes the contents of a mod
+#[derive(Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ModDescriptor {
     pub name: String,
     pub kind: ScriptKind,
     pub description: String,
     pub version: String,
     pub attach_kind: AttachKind,
     pub dependant_on_lua_scripts: Vec<String>,
-    #[serde(skip_deserializing, skip_serializing, default)]
-    pub script: Handle<ScriptAsset>,
-    #[serde(skip_deserializing, skip_serializing, default)]
-    pub assets: Vec<Handle<LoadedUntypedAsset>>,
     pub spell_components: Vec<Arc<SpellComponentDescriptor>>,
 }
 

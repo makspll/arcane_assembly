@@ -29,14 +29,12 @@ function on_script_loaded()
 
         animation_last_sound_time = 0,
         fire_last_time = 0,
-        animation = "Idle",
+        animation = nil,
         animation_flip_x = false,
         spritesheet = world.load_asset_from_mod("Player", "sprites/wizard.ase"),
         sfx_crunch = world.load_asset_from_mod("Player", "audio/crunch.wav"),
         sfx_step = world.load_asset_from_mod("Player", "audio/step.wav"),
     }
-
-    entity:set_aseprite_animation(state.spritesheet, state.animation)
 end
 
 function on_script_unloaded()
@@ -56,6 +54,10 @@ function on_update(dt, elapsed_seconds)
     local new_mana = math.min(state.mana_component.current + (MANA_RECOVERY_PER_SECOND * dt), state.mana_component.maximum)
     state.mana_component.current = new_mana
 
+    -- TODO on_game_started or something
+    if state.animation == nil then
+        entity:set_aseprite_animation(state.spritesheet, "Idle")
+    end
 end
 
 function on_player_input(inputs, elapsed_seconds)

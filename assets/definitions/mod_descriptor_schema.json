@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ModDescriptorAsset",
-  "description": "A descriptor for a mod really. Maybe rename to ModDescriptor.",
+  "title": "ModDescriptor",
+  "description": "Describes the contents of a mod",
   "type": "object",
   "properties": {
     "attachKind": {
