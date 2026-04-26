@@ -19,6 +19,7 @@ function on_spell_cast(entity)
 end
 
 function on_spell_expired(entity)
+    log_warn("despawning expired:" .. tostring(entity))
     world.despawn(entity)
 end
 
@@ -29,6 +30,7 @@ function on_spell_hit_character(entity, other_entity)
         health.current = health.current - main_fireball_state.damage_per_hit
     end
     world.play_sound_effect(main_fireball_state.sfx_fireball)
+    log_warn("despawning on_hit:" .. tostring(entity))
     world.despawn(entity)
 end
 
@@ -36,5 +38,6 @@ end
 function on_spell_hit_terrain(entity, other_entity)
 
     world.play_sound_effect(main_fireball_state.sfx_fireball)
+    log_warn("despawning on_hit_terrain:" .. tostring(entity))
     world.despawn(entity)
 end

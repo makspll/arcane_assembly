@@ -386,6 +386,8 @@ pub fn progress_spell_executions(
                 }
             };
 
+            trace!("Executing spell event: {:?}", event.payload);
+
             if plan.terminate_spell_after_execution {
                 mark_terminal_state(execution);
             }
@@ -400,25 +402,27 @@ pub fn progress_spell_executions(
 
             // we have to do this here just before the callback
             // because the callback itself may despawn the entity, meaning we won't have access to the transform
-            let cast_location =
-                if let Some(move_to_node) = plan.progress_to_next_spell_after_execution {
-                    let (pos, vel) = match query_state.get(world).get(
-                        if execution.last_cast_entity != Entity::PLACEHOLDER {
+            let cast_location = if plan.progress_to_next_spell_after_execution.is_some() {
+                let (pos, vel) = match query_state.get(world).get(
+                    if execution.last_cast_entity != Entity::PLACEHOLDER {
+                        execution.last_cast_entity
+                    } else {
+                        entity
+                    },
+                ) {
+                    Ok((t, v)) => (t.translation.truncate(), v.linvel),
+                    Err(e) => {
+                        error!(
+                            "Error querying transform in spell cast, last_cast_entity: {:?} : {e}",
                             execution.last_cast_entity
-                        } else {
-                            entity
-                        },
-                    ) {
-                        Ok((t, v)) => (t.translation.truncate(), v.linvel),
-                        Err(e) => {
-                            error!("Error querying transform in spell cast: {e}");
-                            (Default::default(), Default::default())
-                        }
-                    };
-                    Some((pos, vel))
-                } else {
-                    None
+                        );
+                        (Default::default(), Default::default())
+                    }
                 };
+                Some((pos, vel))
+            } else {
+                None
+            };
 
             if let Err(err) = execute_spell_callback(
                 world,
@@ -473,6 +477,8 @@ pub fn plan_execution_for_event(
     };
     let spell_to_execute = current_node.descriptor.clone();
 
+    // TODO: this currently means ANY spell currently spawned can affect the transition
+    // might not be what we want
     let progress_to_next_spell_after_execution = current_node
         .transitions
         .iter()
