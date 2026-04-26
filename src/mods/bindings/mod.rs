@@ -1,8 +1,9 @@
 use crate::{
-    scripts::{
+    mods::{
         assets::load_untyped_asset_for_script_descriptor,
         bindings::audio::register_audio_global_functions,
-        loaded_script_descriptors::LoadedScriptDescriptors, script_descriptor::ScriptDescriptor,
+        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
+        mod_descriptor_asset::ModDescriptorAsset,
     },
     sprite::aseprite::{AsepriteHandle, set_aseprite_animation_on_entity},
 };
@@ -33,9 +34,9 @@ impl World {
         path: String,
     ) -> Result<Option<V<Handle<LoadedUntypedAsset>>>, InteropError> {
         let world = ctxt.world()?;
-        let o =
-            world.with_resource(|script_descriptor_assets: &Assets<ScriptDescriptor>| {
-                world.with_resource(|loaded_script_descriptors: &LoadedScriptDescriptors| {
+        let o = world.with_resource(
+            |script_descriptor_assets: &Assets<ModDescriptorAsset>| {
+                world.with_resource(|loaded_script_descriptors: &ModDescriptorLoadedAssets| {
                     world.with_resource_mut(|asset_server: Mut<AssetServer>| {
                         load_untyped_asset_for_script_descriptor(
                             &mod_name,
@@ -47,7 +48,8 @@ impl World {
                         .unwrap()
                     })
                 })
-            })???;
+            },
+        )???;
         Ok(o.map(V::from))
     }
 }

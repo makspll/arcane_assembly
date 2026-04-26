@@ -14,14 +14,14 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    scripts::loaded_script_descriptors::LoadedScriptDescriptors,
+    mods::mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
     spells::spell::SpellComponentDescriptor,
 };
 
 /// A descriptor for a mod really. Maybe rename to ModDescriptor.
 #[derive(Clone, Serialize, Deserialize, Asset, TypePath, JsonSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ScriptDescriptor {
+pub struct ModDescriptorAsset {
     pub name: String,
     pub kind: ScriptKind,
     pub description: String,
@@ -89,8 +89,8 @@ impl ModPathBuf {
 
     pub fn asset_path(
         &self,
-        loaded_script_descriptors: &LoadedScriptDescriptors,
-        descriptor_assets: &Assets<ScriptDescriptor>,
+        loaded_script_descriptors: &ModDescriptorLoadedAssets,
+        descriptor_assets: &Assets<ModDescriptorAsset>,
     ) -> Result<AssetPath<'_>, Box<dyn Error>> {
         let (_, root_handle) = loaded_script_descriptors
             .get_mod_by_name(&self.mod_name, descriptor_assets)

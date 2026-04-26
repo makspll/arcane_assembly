@@ -1,7 +1,7 @@
 use crate::{
-    scripts::{
-        loaded_script_descriptors::{self, LoadedScriptDescriptors},
-        script_descriptor::ScriptDescriptor,
+    mods::{
+        mod_descriptor_loaded_assets::{self, ModDescriptorLoadedAssets},
+        mod_descriptor_asset::ModDescriptorAsset,
     },
     spells::{
         dotgraph::dot_graph_to_spell_graph,
@@ -37,8 +37,8 @@ impl World {
         graph: String,
     ) -> Result<V<Spell>, InteropError> {
         let world = ctxt.world()?;
-        world.with_resource(|descriptors: &LoadedScriptDescriptors| {
-            world.with_resource(|assets: &Assets<ScriptDescriptor>| {
+        world.with_resource(|descriptors: &ModDescriptorLoadedAssets| {
+            world.with_resource(|assets: &Assets<ModDescriptorAsset>| {
                 dot_graph_to_spell_graph(&graph, &as_mod, descriptors, assets)
                     .map_err(InteropError::string)
                     .map(V::new)

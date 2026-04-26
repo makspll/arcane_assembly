@@ -23,10 +23,10 @@ use bevy_mod_scripting::{
 
 use crate::{
     character::spawn_player_entity,
-    scripts::{
-        loaded_script_descriptors::LoadedScriptDescriptors,
-        script_descriptor::ScriptDescriptor,
-        script_descriptor_asset_loader::ScriptDescriptorAssetLoader,
+    mods::{
+        mod_descriptor_asset::ModDescriptorAsset,
+        mod_descriptor_asset_loader::ModDescriptorAssetLoader,
+        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
         systems::{
             OnPlayerInput, OnUpdate, activate_core_scripts, dispaptch_on_update,
             dispatch_on_player_input, init_load_of_all_script_mods,
@@ -39,9 +39,9 @@ use crate::{
 
 pub mod assets;
 pub mod bindings;
-pub mod loaded_script_descriptors;
-pub mod script_descriptor;
-pub mod script_descriptor_asset_loader;
+pub mod mod_descriptor_asset;
+pub mod mod_descriptor_asset_loader;
+pub mod mod_descriptor_loaded_assets;
 pub mod systems;
 
 /// Sets up all interactions between the engine and scripts via BMS
@@ -103,9 +103,9 @@ impl Plugin for ScriptLoaderPlugin {
                 )),
         );
 
-        app.init_asset::<ScriptDescriptor>()
-            .register_asset_loader(ScriptDescriptorAssetLoader)
-            .init_resource::<LoadedScriptDescriptors>()
+        app.init_asset::<ModDescriptorAsset>()
+            .register_asset_loader(ModDescriptorAssetLoader)
+            .init_resource::<ModDescriptorLoadedAssets>()
             .add_systems(
                 Startup,
                 init_load_of_all_script_mods.after(spawn_player_entity),

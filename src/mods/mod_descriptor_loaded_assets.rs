@@ -9,18 +9,18 @@ use bevy::{
 };
 
 use crate::{
-    scripts::script_descriptor::ScriptDescriptor,
+    mods::mod_descriptor_asset::ModDescriptorAsset,
     spells::spell::{SpellComponentDescriptor, SpellComponentDescriptorHandle},
 };
 
 /// Exists to keep asset handles alive
 #[derive(Resource, Default)]
-pub struct LoadedScriptDescriptors {
-    pub descriptors: Vec<Handle<ScriptDescriptor>>,
+pub struct ModDescriptorLoadedAssets {
+    pub descriptors: Vec<Handle<ModDescriptorAsset>>,
 }
 
-impl LoadedScriptDescriptors {
-    pub fn new(descriptors: Vec<Handle<ScriptDescriptor>>) -> Self {
+impl ModDescriptorLoadedAssets {
+    pub fn new(descriptors: Vec<Handle<ModDescriptorAsset>>) -> Self {
         Self { descriptors }
     }
 
@@ -28,8 +28,8 @@ impl LoadedScriptDescriptors {
     pub fn get_mod_by_name<'a>(
         &self,
         name: &str,
-        assets: &'a Assets<ScriptDescriptor>,
-    ) -> Option<(&'a ScriptDescriptor, Handle<ScriptDescriptor>)> {
+        assets: &'a Assets<ModDescriptorAsset>,
+    ) -> Option<(&'a ModDescriptorAsset, Handle<ModDescriptorAsset>)> {
         self.descriptors.iter().find_map(|handle| {
             assets
                 .get(handle)
@@ -43,7 +43,7 @@ impl LoadedScriptDescriptors {
         &self,
         name: &str,
         spell_component: &str,
-        assets: &'a Assets<ScriptDescriptor>,
+        assets: &'a Assets<ModDescriptorAsset>,
     ) -> Option<SpellComponentDescriptorHandle> {
         self.descriptors
             .iter()

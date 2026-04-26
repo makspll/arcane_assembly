@@ -39,8 +39,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    character::controllable_character::Character, physics::CollisionGroup,
-    scripts::script_descriptor::ModPathBuf, spells::executor::AbilityExecutionId,
+    character::controllable_character::Character, mods::mod_descriptor_asset::ModPathBuf,
+    physics::CollisionGroup, spells::executor::AbilityExecutionId,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, Default, Reflect)]
