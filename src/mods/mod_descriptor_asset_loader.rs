@@ -3,11 +3,13 @@ use crate::{
         mod_descriptor_asset::{ModDescriptor, ModDescriptorAsset},
         systems::{asset_root_path, recurse_dirs},
     },
-    spells::spell,
+    spells::{spell, spell_component_asset::SpellComponentAsset},
 };
 use bevy::{
     asset::{AssetLoader, AssetPath},
     ecs::error::BevyError,
+    log::error,
+    platform::collections::HashMap,
     reflect::TypePath,
 };
 
@@ -40,7 +42,53 @@ impl AssetLoader for ModDescriptorAssetLoader {
 
         let script = load_context.load(script_path);
 
-        Ok(ModDescriptorAsset { descriptor, script })
+        let mut spell_component_asset_handles =
+            HashMap::with_capacity(descriptor.spell_components.len());
+
+        let spell_directory = load_context
+            .path()
+            .parent()
+            .expect("bad path")
+            .resolve("spells")
+            .expect("invalid parse");
+        for spell_component_descriptor in &descriptor.spell_components {
+            let script_path = match spell_directory
+                .resolve(&format!("{}.lua", spell_component_descriptor.identifier))
+            {
+                Ok(path) => path,
+                Err(err) => {
+                    error!(
+                        "Invalid script component identifier, could not build path. Mod: {}, component identifier: {}. {err}",
+                        descriptor.name, spell_component_descriptor.identifier
+                    );
+                    continue;
+                }
+            };
+            let spell_component_asset = load_context
+                .labeled_asset_scope::<SpellComponentAsset, ()>(
+                    format!("spell_component:{}", spell_component_descriptor.identifier),
+                    |a| {
+                        let script = a.load(script_path);
+
+                        Ok(SpellComponentAsset {
+                            descriptor: spell_component_descriptor.clone(),
+                            script,
+                        })
+                    },
+                )
+                .expect("infallible");
+
+            spell_component_asset_handles.insert(
+                spell_component_descriptor.identifier.to_owned(),
+                spell_component_asset,
+            );
+        }
+
+        Ok(ModDescriptorAsset {
+            descriptor,
+            script,
+            spell_component_asset_handles,
+        })
     }
 
     fn extensions(&self) -> &[&str] {

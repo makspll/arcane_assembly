@@ -14,7 +14,7 @@ use crate::{
     character::controllable_character::{Character, Player},
     spells::{
         executor::{SpellEvent, SpellEventPayload},
-        spell::{ExecutingSpellComponent, SpellComponentDescriptor, WithLifetime},
+        spell::{ExecutingSpellComponent, WithLifetime},
     },
 };
 

@@ -49,22 +49,6 @@
         "Static"
       ]
     },
-    "ModPathBuf": {
-      "description": "A [`PathBuf`] but pointing to a specific mod",
-      "type": "object",
-      "properties": {
-        "mod_name": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "mod_name",
-        "path"
-      ]
-    },
     "ScriptKind": {
       "type": "string",
       "enum": [
@@ -116,24 +100,13 @@
           "type": "number",
           "format": "float"
         },
-        "friendly_name": {
-          "description": "The name to show in the UI",
-          "type": "string"
-        },
         "handler_label": {
           "description": "The postfix to give to every handler for this spell. For example if this name is 'my_spell' then the handler for casting the spell\nwould have to be called \"on_cast_my_spell\", and similar for all the other spell callbacks.",
           "type": "string"
         },
-        "icon_sprite_path": {
-          "description": "the path to an icon within the mod that can be shown in the UI, if not provided a placeholder will be used",
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ModPathBuf"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "identifier": {
+          "description": "A unique (within the mod) spell name. Typically in snake case.",
+          "type": "string"
         },
         "lifetime_milliseconds": {
           "description": "The time after which this component is killed, and its death effect triggered",
@@ -144,16 +117,11 @@
           "description": "The amount of mana drained every time this component is triggered.\nIf mana is not enough for the next component, firing is blocked.",
           "type": "number",
           "format": "float"
-        },
-        "script_controller_path": {
-          "description": "The controller script for this component.\nAll callbacks and triggers get sent to it while the component is alive",
-          "$ref": "#/$defs/ModPathBuf"
         }
       },
       "required": [
-        "friendly_name",
+        "identifier",
         "handler_label",
-        "script_controller_path",
         "mana_drain_per_shot",
         "delay_milliseconds",
         "lifetime_milliseconds",

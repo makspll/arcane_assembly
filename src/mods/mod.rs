@@ -28,9 +28,8 @@ use crate::{
         mod_descriptor_asset_loader::ModDescriptorAssetLoader,
         mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
         systems::{
-            OnPlayerInput, OnUpdate, activate_core_scripts, dispaptch_on_update,
-            dispatch_on_player_input, init_load_of_all_script_mods,
-            load_external_dependencies_in_mods,
+            OnPlayerInput, OnUpdate, activate_core_scripts, activate_spell_component_scripts,
+            dispaptch_on_update, dispatch_on_player_input, init_load_of_all_script_mods,
         },
     },
     state::GameState,
@@ -115,9 +114,9 @@ impl Plugin for ScriptLoaderPlugin {
                 (
                     // TODO: use a one time schedule for initialization rather than doing game state checks every update
                     (activate_core_scripts).run_if(in_state(GameState::CoreScriptsLoading)),
-                    (load_external_dependencies_in_mods)
+                    (activate_spell_component_scripts)
                         .chain()
-                        .run_if(in_state(GameState::ModDependencyResolution)),
+                        .run_if(in_state(GameState::SpellComponentLoading)),
                     (
                         dispaptch_on_update.in_set(GameSystemSets::UpdateDispatch),
                         dispatch_on_player_input.in_set(GameSystemSets::PlayerInputDispatch),

@@ -7,6 +7,7 @@ use std::{
 
 use bevy::{
     asset::{Asset, AssetPath, Assets, Handle, LoadedUntypedAsset},
+    platform::collections::HashMap,
     reflect::{Reflect, TypePath},
 };
 use bevy_mod_scripting::asset::ScriptAsset;
@@ -15,13 +16,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     mods::mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
-    spells::spell::SpellComponentDescriptor,
+    spells::spell_component_asset::{SpellComponentAsset, SpellComponentDescriptor},
 };
 
 #[derive(Asset, TypePath)]
 pub struct ModDescriptorAsset {
     pub descriptor: ModDescriptor,
     pub script: Handle<ScriptAsset>,
+    pub spell_component_asset_handles: HashMap<String, Handle<SpellComponentAsset>>,
 }
 
 /// Describes the contents of a mod
@@ -34,7 +36,7 @@ pub struct ModDescriptor {
     pub version: String,
     pub attach_kind: AttachKind,
     pub dependant_on_lua_scripts: Vec<String>,
-    pub spell_components: Vec<Arc<SpellComponentDescriptor>>,
+    pub spell_components: Vec<SpellComponentDescriptor>,
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]

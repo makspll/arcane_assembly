@@ -1,5 +1,6 @@
 use bevy::{
     app::{Plugin, PostUpdate, Update},
+    asset::AssetApp,
     ecs::schedule::IntoScheduleConfigs,
 };
 use bevy_mod_scripting::{lua::LuaScriptingPlugin, prelude::event_handler};
@@ -13,6 +14,7 @@ use crate::{
         },
         lifecycle::{trigger_spell_expirations, trigger_spell_hits},
         mana::Mana,
+        spell_component_asset::SpellComponentAsset,
     },
     system_sets::GameSystemSets,
 };
@@ -23,13 +25,15 @@ pub mod executor;
 pub mod lifecycle;
 pub mod mana;
 pub mod spell;
+pub mod spell_component_asset;
 
 pub struct GameSpellsPlugin;
 
 impl Plugin for GameSpellsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_message::<SpellEvent>()
-            .init_resource::<AbilityExecutions>();
+            .init_resource::<AbilityExecutions>()
+            .init_asset::<SpellComponentAsset>();
 
         // rapier runs in update
         // our scripts will have to react accordingly
