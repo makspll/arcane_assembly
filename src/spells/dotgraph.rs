@@ -1,15 +1,15 @@
 
 use crate::{
     mods::{
-        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets, mod_descriptor_asset::ModDescriptorAsset,
+        mod_descriptor_asset::ModDescriptorAsset, mod_descriptor_loaded_assets::ModDescriptorLoadedAssets
     },
     spells::{
-        executor::{Spell},
-        spell::{SpellComponentDescriptor, SpellComponentDescriptorHandle},
+        executor::Spell,
+        spell_component_asset::SpellComponentAsset,
     },
 };
 use bevy::
-    asset::Assets
+    asset::{Assets, Handle}
 ;
 use petgraph::{Graph, dot::dot_parser::ParseFromDot};
 use petgraph::
@@ -19,7 +19,7 @@ use petgraph::
 // TODO: don't clone descriptors everywhere, store handles
 #[derive(Clone, Debug)]
 pub struct SpellGraphNode {
-    pub descriptor: SpellComponentDescriptorHandle,
+    pub descriptor: Handle<SpellComponentAsset>,
 }
 
 #[derive(Clone, Debug)]
@@ -47,7 +47,7 @@ pub fn dot_graph_to_spell_graph(
             start_node = Some(i);
         }
 
-        let res: Result<SpellComponentDescriptorHandle, String> = (|| {
+        let res: Result<Handle<SpellComponentAsset>, String> = (|| {
 
             let label = node.attr.elems.iter()
                 .find_map(|(key,val)| (*key == "label").then_some(*val))
@@ -68,7 +68,7 @@ pub fn dot_graph_to_spell_graph(
             Err(e) => {
                 last_err = Err(e);
                 return SpellGraphNode{
-                    descriptor: SpellComponentDescriptorHandle(SpellComponentDescriptor::default().into())
+                    descriptor: Handle::default()
                 }
             },
         };

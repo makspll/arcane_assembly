@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, fmt, ops::Index, sync::atomic::AtomicUsize};
 
 use bevy::{
+    asset::{AssetPath, Assets, Handle},
     ecs::{
         entity::Entity,
         error::trace,
@@ -35,7 +36,8 @@ use petgraph::{
 
 use crate::spells::{
     dotgraph::{SpellGraphNode, SpellGraphTransition},
-    spell::{LiveSpell, SpellComponentDescriptor, SpellComponentDescriptorHandle},
+    spell::LiveSpell,
+    spell_component_asset::SpellComponentAsset,
 };
 
 type NodeId = usize;
@@ -50,7 +52,7 @@ pub struct Spell {
 
 #[derive(Reflect, Debug)]
 pub struct SpellComponent {
-    pub descriptor: SpellComponentDescriptorHandle,
+    pub descriptor: Handle<SpellComponentAsset>,
     pub transitions: Vec<(SpellTransitionTrigger, NodeId)>,
 }
 
@@ -100,7 +102,7 @@ impl Spell {
         let mut idx = 0;
         while let Some(next) = dfs.next(&graph) {
             dfs_index_of[next.index()] = idx;
-            idx = idx + 1;
+            idx += 1;
         }
 
         let mut nodes = Vec::with_capacity(dfs_index_of.len());
@@ -109,7 +111,7 @@ impl Spell {
             let transitions = graph
                 .edges_directed(node_idx, petgraph::Direction::Outgoing)
                 .map(|edge| {
-                    let trigger_event = edge.weight().modifier_event.as_ref().map(|s| s.as_str());
+                    let trigger_event = edge.weight().modifier_event.as_deref();
                     let trigger = SpellTransitionTrigger::new(trigger_event);
                     let target = edge.target();
                     let target_dfs_idx = dfs_index_of[target.index()];
@@ -140,7 +142,13 @@ impl Spell {
                         .map(|event| format!("label=\"{}\"", event))
                         .unwrap_or_default()
                 },
-                &|_, (_, node)| format!("label=\"{}\"", node.descriptor.friendly_name),
+                &|_, (_, node)| format!(
+                    "label=\"{}\"",
+                    node.descriptor
+                        .path()
+                        .map(|p| p.to_string())
+                        .unwrap_or_else(|| String::from("missing asset path"))
+                ),
             )
         );
 
@@ -347,7 +355,7 @@ pub fn spell_executions_live(executions: Res<AbilityExecutions>) -> bool {
 // borrow checker friendly encapsulation
 #[derive(Debug)]
 struct StepPlan {
-    spell_to_execute: SpellComponentDescriptorHandle,
+    spell_component_to_execute: Handle<SpellComponentAsset>,
     progress_to_next_spell_after_execution: Option<NodeId>,
     terminate_spell_after_execution: bool,
 }
@@ -364,6 +372,9 @@ pub fn progress_spell_executions(
         .get_resource::<AppReflectAllocator>()
         .cloned()
         .expect("missing allocator");
+
+    let spell_descriptor_assets: Assets<SpellComponentAsset> =
+        world.remove_resource().expect("missing resource");
 
     let mut any_finished = false;
 
@@ -386,6 +397,19 @@ pub fn progress_spell_executions(
                 }
             };
 
+            let spell_descriptor_asset =
+                match spell_descriptor_assets.get(&plan.spell_component_to_execute) {
+                    Some(asset) => asset,
+                    None => {
+                        error!(
+                            "Spell execution failed, missing asset: {:?}",
+                            plan.spell_component_to_execute.path()
+                        );
+                        mark_terminal_state(execution);
+                        continue;
+                    }
+                };
+
             trace!("Executing spell event: {:?}", event.payload);
 
             if plan.terminate_spell_after_execution {
@@ -397,7 +421,8 @@ pub fn progress_spell_executions(
                 &allocator,
                 execution,
                 &event,
-                &plan.spell_to_execute,
+                spell_descriptor_asset,
+                &plan.spell_component_to_execute,
             );
 
             // we have to do this here just before the callback
@@ -428,7 +453,7 @@ pub fn progress_spell_executions(
                 world,
                 &allocator,
                 &event,
-                &plan.spell_to_execute,
+                spell_descriptor_asset,
                 entity_ref,
             ) {
                 error!("Spell execution failed: {err}");
@@ -459,6 +484,7 @@ pub fn progress_spell_executions(
     }
 
     world.insert_resource(executions);
+    world.insert_resource(spell_descriptor_assets);
 }
 
 pub fn plan_execution_for_event(
@@ -485,7 +511,7 @@ pub fn plan_execution_for_event(
         .find_map(|(t, next)| t.satisfied_by(payload).then_some(*next));
 
     Ok(StepPlan {
-        spell_to_execute,
+        spell_component_to_execute: spell_to_execute,
         progress_to_next_spell_after_execution,
         terminate_spell_after_execution: matches!(payload, SpellEventPayload::Expired { .. }),
     })
@@ -495,7 +521,7 @@ fn execute_spell_callback(
     world: &mut World,
     allocator: &AppReflectAllocator,
     event: &SpellEvent,
-    spell: &SpellComponentDescriptor,
+    spell: &SpellComponentAsset,
     entity_ref: ReflectReference,
 ) -> Result<(), ScriptError> {
     let mut allocator = allocator.write();
@@ -503,7 +529,9 @@ fn execute_spell_callback(
     event.payload.add_args(&mut allocator, &mut args);
     drop(allocator);
 
-    let label = event.payload.to_callback_label(&spell.handler_label);
+    let label = event
+        .payload
+        .to_callback_label(&spell.descriptor.handler_label);
 
     run_spell_callback(world, args, spell, label).map(|_| ())
 }
@@ -513,7 +541,8 @@ fn resolve_or_spawn_cast_entity(
     allocator: &AppReflectAllocator,
     execution: &AbilityExecution,
     event: &SpellEvent,
-    spell: &SpellComponentDescriptorHandle,
+    spell: &SpellComponentAsset,
+    handle: &Handle<SpellComponentAsset>,
 ) -> (ReflectReference, Entity) {
     let mut allocator = allocator.write();
     match event.payload.spell_entity() {
@@ -526,7 +555,14 @@ fn resolve_or_spawn_cast_entity(
                 .get_resource::<Time<Virtual>>()
                 .expect("missing time resource");
             let entity = world
-                .spawn(LiveSpell::new(execution.id, pos, vel, time, spell.clone()))
+                .spawn(LiveSpell::new(
+                    execution.id,
+                    pos,
+                    vel,
+                    time,
+                    handle.clone(),
+                    spell,
+                ))
                 .id();
 
             let allocated = ReflectReference::new_allocated(entity, &mut allocator);
@@ -539,15 +575,10 @@ fn resolve_or_spawn_cast_entity(
 fn run_spell_callback(
     world: &mut World,
     args: Vec<ScriptValue>,
-    parent: &SpellComponentDescriptor,
+    parent: &SpellComponentAsset,
     label: CallbackLabel,
 ) -> Result<ScriptValue, ScriptError> {
-    let handle = parent.script_controller_handle.clone().ok_or_else(|| {
-        ScriptError::from(InteropError::string(format!(
-            "could not find script controller: {}",
-            parent.script_controller_path
-        )))
-    })?;
+    let handle = parent.script.clone();
 
     let cmd = RunScriptCallback::<LuaScriptingPlugin>::new(
         ScriptAttachment::StaticScript(handle),
@@ -556,6 +587,6 @@ fn run_spell_callback(
         false,
     )
     .with_send_errors(true)
-    .with_error_context(format!("running spell: {}", parent.friendly_name));
+    .with_error_context(format!("running spell: {}", parent.descriptor.identifier));
     cmd.run(world)
 }

@@ -13,7 +13,7 @@ use bevy::{
         keyboard::{Key, KeyCode},
         mouse::MouseButton,
     },
-    log::{self, info, trace},
+    log::{self, error, info, trace},
     platform::collections::{HashMap, HashSet},
     state::state::NextState,
     time::{Real, Time},
@@ -39,6 +39,7 @@ use crate::{
         mod_descriptor_asset::{AttachKind, ModDescriptor, ModDescriptorAsset, ScriptKind},
         mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
     },
+    spells::spell_component_asset::SpellComponentAsset,
     state::GameState,
 };
 
@@ -87,7 +88,7 @@ pub fn activate_core_scripts(
 
     if pipeline_state.processing_batch_completed() && loaded > 1 {
         info!("Loaded {total} mods");
-        next_state.set(GameState::ModDependencyResolution)
+        next_state.set(GameState::SpellComponentLoading)
     }
 }
 
@@ -132,64 +133,31 @@ pub fn init_load_of_all_script_mods(
     .expect("failed to read script assets");
 }
 
-/// Completes loading of mods, by resolving any pointers to external mods as handles etc.
-///
-/// Ideally we should also re-do this if new assets are added, but that's rare enough it's probably fine, downstream changes to the script will re-load the script itself.
-pub fn load_external_dependencies_in_mods(
+pub fn activate_spell_component_scripts(
     mut commands: Commands,
-    loaded_script_descriptors: Res<ModDescriptorLoadedAssets>,
-    mut descriptors: ResMut<Assets<ModDescriptorAsset>>,
+    loaded_mod_descriptors: Res<ModDescriptorLoadedAssets>,
+    mod_assets: Res<Assets<ModDescriptorAsset>>,
+    spell_component_assets: Res<Assets<SpellComponentAsset>>,
     mut next_state: ResMut<NextState<GameState>>,
-    asset_server: Res<AssetServer>,
 ) {
-    let mut script_resolutions: HashMap<(AssetId<ModDescriptorAsset>, usize), Handle<ScriptAsset>> =
-        Default::default();
-    let mut static_scripts_to_attach: HashSet<Handle<ScriptAsset>> = Default::default();
-
-    for (asset_id, asset) in descriptors.iter() {
-        for (idx, spell_component) in asset.descriptor.spell_components.iter().enumerate() {
-            let resolution = match spell_component
-                .script_controller_path
-                .asset_path(&loaded_script_descriptors, &descriptors)
-            {
-                Ok(resolved) => {
-                    trace!(
-                        "Resolving script controller path: {}, with: {}",
-                        spell_component.script_controller_path, resolved
+    // we could just iterate over the assets resource directly, but this way we check everything is complete I guess
+    for mod_descriptor in &loaded_mod_descriptors.descriptors {
+        if let Some(mod_descriptor_asset) = mod_assets.get(mod_descriptor) {
+            for (_, spell_descriptor) in &mod_descriptor_asset.spell_component_asset_handles {
+                if let Some(spell_descriptor_asset) = spell_component_assets.get(spell_descriptor) {
+                    commands.queue(AttachScript::<LuaScriptingPlugin>::new(
+                        ScriptAttachment::StaticScript(spell_descriptor_asset.script.clone()),
+                    ));
+                } else {
+                    error!(
+                        "Missing spell component descriptor asset: {:?}",
+                        spell_descriptor
                     );
-                    asset_server.load(resolved)
                 }
-                Err(err) => {
-                    log::error!(
-                        "Failed to resolve script dependency in mod: '{}', on spell_component_controller: '{}': {err}",
-                        asset.descriptor.name,
-                        spell_component.script_controller_path
-                    );
-                    continue;
-                }
-            };
-            script_resolutions.insert((asset_id, idx), resolution.clone());
-            static_scripts_to_attach.insert(resolution);
+            }
+        } else {
+            error!("Missing mod descriptor asset: {:?}", mod_descriptor);
         }
-    }
-
-    // apply resolutions
-    for ((asset_id, spell_component_idx), resolved_script) in script_resolutions {
-        let asset = descriptors
-            .get_mut_untracked(asset_id)
-            .expect("invariant broken: previously resolved asset missing");
-        // could do a mutex or some shit, but this should really only be read only after loading
-        // I think reloading might be weird though because arc will get re-created, so remaining handles will point to old spell component
-        // maybe that's good
-        let mut cloned = (*asset.descriptor.spell_components[spell_component_idx]).clone();
-        cloned.script_controller_handle = Some(resolved_script);
-        asset.descriptor.spell_components[spell_component_idx] = Arc::new(cloned);
-    }
-
-    for script in static_scripts_to_attach.drain() {
-        commands.queue(AttachScript::<LuaScriptingPlugin>::new(
-            ScriptAttachment::StaticScript(script),
-        ));
     }
 
     next_state.set(GameState::Running);

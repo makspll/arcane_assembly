@@ -10,7 +10,7 @@ use bevy::{
 
 use crate::{
     mods::mod_descriptor_asset::ModDescriptorAsset,
-    spells::spell::{SpellComponentDescriptor, SpellComponentDescriptorHandle},
+    spells::spell_component_asset::SpellComponentAsset,
 };
 
 /// Exists to keep asset handles alive
@@ -44,7 +44,7 @@ impl ModDescriptorLoadedAssets {
         name: &str,
         spell_component: &str,
         assets: &'a Assets<ModDescriptorAsset>,
-    ) -> Option<SpellComponentDescriptorHandle> {
+    ) -> Option<Handle<SpellComponentAsset>> {
         self.descriptors
             .iter()
             .find_map(|handle| {
@@ -53,13 +53,10 @@ impl ModDescriptorLoadedAssets {
                     .filter(|descriptor| descriptor.descriptor.name == name)
                     .and_then(|descriptor| {
                         descriptor
-                            .descriptor
-                            .spell_components
-                            .iter()
-                            .find(|d| d.friendly_name == spell_component)
+                            .spell_component_asset_handles
+                            .get(spell_component)
                     })
             })
             .cloned()
-            .map(SpellComponentDescriptorHandle)
     }
 }
