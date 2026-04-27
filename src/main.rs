@@ -10,6 +10,7 @@ use crate::{
     input::GameInputPlugin,
     map::MapPlugin,
     mods::{ScriptLoaderPlugin, bindings::ScriptBindingsPlugin},
+    particles::GameParticlesPlugin,
     physics::PhysicsPlugin,
     settings::WindowSettings,
     spells::GameSpellsPlugin,
@@ -26,6 +27,7 @@ mod console;
 mod input;
 mod map;
 mod mods;
+mod particles;
 mod physics;
 mod settings;
 mod spells;
@@ -99,6 +101,7 @@ impl Plugin for ArcaneAssemblyPlugin {
             GameInputPlugin,
             GameUiPlugin,
             GameSystemSetPlugin,
+            GameParticlesPlugin,
         ));
     }
 }

@@ -27,11 +27,14 @@ bevy_rapier2d = { version = "0.33.0", features = [
     "parallel",
 ] }
 
+# particles
+bevy_hanabi = { version = "0.18", default-features = false, features = ["2d", "serde"]}
+
 # sprites
 bevy_aseprite_ultra = { version = "0.8", features = ["asset_processing"] }
 
 # scripting
-bevy_mod_scripting = { git = "https://github.com/makspll/bevy_mod_scripting", rev = "a59df22", features = [
+bevy_mod_scripting = { git = "https://github.com/makspll/bevy_mod_scripting", rev = "a0a5991", features = [
     "luajit",
     "lua_language_server_files",
 ] }
