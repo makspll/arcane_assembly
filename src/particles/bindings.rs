@@ -4,12 +4,14 @@ use bevy::{
     asset::{Assets, Handle},
     color::LinearRgba,
     ecs::{
-        entity::Entity,
+        entity::{ContainsEntity, Entity},
+        hierarchy::ChildOf,
         world::{Mut, World},
     },
     math::{Vec2, Vec3, Vec4},
     mesh::Mesh,
     reflect::Reflect,
+    time::{Time, Virtual},
     transform::components::Transform,
 };
 use bevy_hanabi::prelude::*;
@@ -21,26 +23,50 @@ use crate::{
         ParticleAttribute, ParticleEffectBuilder, ParticleEffectModule, ParticleExprHandle,
         ParticleModifier, ParticleRenderModifier,
     },
+    spells::spell::WithLifetime,
 };
 
 // -- Globals --
 #[script_bindings(name = "global_particle_functions", remote, unregistered)]
 impl World {
     /// Spawns a one-shot particle effect at a position
-    fn spawn_particle_effect(
+    fn spawn_particle_effect_one_shot(
         ctxt: FunctionCallContext,
         effect: V<ScriptHandleWrapper<EffectAsset>>,
         position: V<Vec3>,
+        lifetime_seconds: f64,
     ) -> Result<V<Entity>, InteropError> {
         let world = ctxt.world()?;
 
         world.with_world_mut_access(|w| {
+            let time = w.get_resource_ref::<Time<Virtual>>().expect("time missing");
+            let with_lifetime = WithLifetime::new(&time, lifetime_seconds);
             let entity = w
                 .commands()
                 .spawn((
                     ParticleEffect::new(effect.0.0),
                     Transform::from_translation(*position),
+                    with_lifetime,
                 ))
+                .id();
+
+            w.flush();
+
+            Ok(V::new(entity))
+        })?
+    }
+
+    /// Spawns a persistent particle effect at an entity
+    fn spawn_particle_effect(
+        ctxt: FunctionCallContext,
+        effect: V<ScriptHandleWrapper<EffectAsset>>,
+        parent_entity: V<Entity>,
+    ) -> Result<V<Entity>, InteropError> {
+        let world = ctxt.world()?;
+
+        world.with_world_mut_access(|w| {
+            let entity = w
+                .spawn((ChildOf(*parent_entity), ParticleEffect::new(effect.0.0)))
                 .id();
 
             w.flush();
@@ -150,6 +176,45 @@ impl MotionIntegration {
     }
 }
 
+#[script_bindings(name = "particle_value_type_bindings", remote)]
+impl ValueType {
+    fn float() -> V<ValueType> {
+        ValueType::Scalar(ScalarType::Float).into()
+    }
+
+    fn bool() -> V<ValueType> {
+        ValueType::Scalar(ScalarType::Bool).into()
+    }
+
+    fn int() -> V<ValueType> {
+        ValueType::Scalar(ScalarType::Int).into()
+    }
+
+    fn uint() -> V<ValueType> {
+        ValueType::Scalar(ScalarType::Uint).into()
+    }
+
+    fn color() -> V<ValueType> {
+        ValueType::Scalar(ScalarType::Uint).into()
+    }
+
+    fn vec2() -> V<ValueType> {
+        ValueType::Vector(VectorType::VEC2F).into()
+    }
+
+    fn vec3() -> V<ValueType> {
+        ValueType::Vector(VectorType::VEC3F).into()
+    }
+
+    fn vec4() -> V<ValueType> {
+        ValueType::Vector(VectorType::VEC4F).into()
+    }
+
+    fn matrix(cols: u8, rows: u8) -> V<ValueType> {
+        ValueType::Matrix(MatrixType::new(cols, rows)).into()
+    }
+}
+
 #[script_bindings(name = "particle_value_bindings", remote)]
 impl Value {
     fn float(v: f32) -> V<Value> {
@@ -166,6 +231,10 @@ impl Value {
 
     fn uint(v: u32) -> V<Value> {
         Value::Scalar(ScalarValue::Uint(v)).into()
+    }
+
+    fn color(v: V<LinearRgba>) -> V<Value> {
+        Value::Scalar(ScalarValue::Uint(v.as_u32())).into()
     }
 
     fn vec2(v: V<Vec2>) -> V<Value> {
@@ -218,6 +287,12 @@ impl ParticleModifier {
     fn set_position(value: V<ParticleExprHandle>) -> V<ParticleModifier> {
         V::new(ParticleModifier {
             inner: Arc::new(SetAttributeModifier::new(Attribute::POSITION, value.0.expr)),
+        })
+    }
+
+    fn set_color(value: V<ParticleExprHandle>) -> V<ParticleModifier> {
+        V::new(ParticleModifier {
+            inner: Arc::new(SetAttributeModifier::new(Attribute::COLOR, value.0.expr)),
         })
     }
 
@@ -330,6 +405,60 @@ impl ParticleAttribute {
         let attr = Attribute::from_name(&name)?;
         Some(ParticleAttribute { attr }.into())
     }
+
+    ///     The age of the particle.
+    /// Each time the particle is updated, the current simulation delta time is added to the particle's age. The age can be used to animate some other quantities; see the ColorOverLifetimeModifier for example.
+    /// If the particle also has a lifetime (either a per-effect constant value, or a per-particle value stored in the Attribute::LIFETIME attribute), then when the age of the particle exceeds its lifetime, the particle dies and is not simulated nor rendered anymore.
+    /// ScalarType::Float
+    fn age() -> V<ParticleAttribute> {
+        let attr = Attribute::AGE;
+        ParticleAttribute { attr }.into()
+    }
+
+    /// The lifetime of the particle.
+    /// This attribute stores a per-particle lifetime, which compared to the particle's age allows determining if the particle needs to be simulated and rendered. This requires the Attribute::AGE attribute to be used too.
+    /// ScalarType::Float
+    fn lifetime() -> V<ParticleAttribute> {
+        let attr = Attribute::LIFETIME;
+        ParticleAttribute { attr }.into()
+    }
+
+    /// The particle's base color.
+    /// This attribute stores a per-particle color, which can be used for various purposes, generally as the base color for rendering the particle.
+    /// ScalarType::Uint representing the RGBA components of the color encoded as 0xAABBGGRR, with a single byte per component, where the alpha value is stored in the most significant byte and the red value in the least significant byte. Note that this representation is the same as the one returned by LinearRgba::as_u32().
+    fn color() -> V<ParticleAttribute> {
+        let attr = Attribute::COLOR;
+        ParticleAttribute { attr }.into()
+    }
+
+    /// The particle velocity in simulation space.
+    /// VectorType::VEC3F representing the XYZ coordinates of the velocity.
+    fn velocity() -> V<ParticleAttribute> {
+        let attr = Attribute::VELOCITY;
+        ParticleAttribute { attr }.into()
+    }
+
+    /// The particle position in simulation space.
+    // VectorType::VEC3F representing the XYZ coordinates of the position.
+    fn position() -> V<ParticleAttribute> {
+        let attr = Attribute::POSITION;
+        ParticleAttribute { attr }.into()
+    }
+
+    ///The particle's opacity (alpha).
+    // This is a value in [0:1], where 0 corresponds to a fully transparent particle, and 1 to a fully opaque one.
+    fn alpha() -> V<ParticleAttribute> {
+        let attr = Attribute::ALPHA;
+        ParticleAttribute { attr }.into()
+    }
+
+    /// The particle's uniform size.
+    /// The particle is uniformly scaled by this size.
+    /// ScalarType::Float
+    fn size() -> V<ParticleAttribute> {
+        let attr = Attribute::SIZE;
+        ParticleAttribute { attr }.into()
+    }
 }
 
 #[script_bindings(name = "particle_module_bindings", remote)]
@@ -365,6 +494,16 @@ impl ParticleEffectModule {
         ParticleExprHandle { expr }.into()
     }
 
+    fn lit_u32(
+        _ctxt: FunctionCallContext,
+        module: M<ParticleEffectModule>,
+        value: u32,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        let expr = m.module.lit(value);
+        ParticleExprHandle { expr }.into()
+    }
+
     fn lit_vec2(
         _ctxt: FunctionCallContext,
         module: M<ParticleEffectModule>,
@@ -387,21 +526,10 @@ impl ParticleEffectModule {
         ParticleExprHandle { expr }.into()
     }
 
-    fn rgba_u32(
-        module: M<ParticleEffectModule>,
-        r: f32,
-        g: f32,
-        b: f32,
-        a: f32,
-    ) -> V<ParticleExprHandle> {
-        let r = (r.clamp(0.0, 1.0) * 255.0) as u32;
-        let g = (g.clamp(0.0, 1.0) * 255.0) as u32;
-        let b = (b.clamp(0.0, 1.0) * 255.0) as u32;
-        let a = (a.clamp(0.0, 1.0) * 255.0) as u32;
-
-        let color = (r << 24) | (g << 16) | (b << 8) | a;
+    fn lit_color(module: M<ParticleEffectModule>, v: V<LinearRgba>) -> V<ParticleExprHandle> {
         let m = module.0;
-        let expr = m.module.lit(color);
+
+        let expr = m.module.lit(v.as_u32());
         ParticleExprHandle { expr }.into()
     }
 
@@ -442,15 +570,128 @@ impl ParticleEffectModule {
 
     fn rand(module: M<ParticleEffectModule>, value: V<ValueType>) -> V<ParticleExprHandle> {
         let m = module.0;
-
         ParticleExprHandle {
             expr: m.module.builtin(BuiltInOperator::Rand(*value)),
         }
         .into()
     }
 
+    fn mix(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+        b: V<ParticleExprHandle>,
+        fraction: V<ParticleExprHandle>,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        ParticleExprHandle {
+            expr: m.module.mix(
+                a.into_inner().expr,
+                b.into_inner().expr,
+                fraction.into_inner().expr,
+            ),
+        }
+        .into()
+    }
+
+    fn clamp(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+        b: V<ParticleExprHandle>,
+        fraction: V<ParticleExprHandle>,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        ParticleExprHandle {
+            expr: m.module.clamp(
+                a.into_inner().expr,
+                b.into_inner().expr,
+                fraction.into_inner().expr,
+            ),
+        }
+        .into()
+    }
+
+    fn smoothstep(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+        b: V<ParticleExprHandle>,
+        fraction: V<ParticleExprHandle>,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        ParticleExprHandle {
+            expr: m.module.smoothstep(
+                a.into_inner().expr,
+                b.into_inner().expr,
+                fraction.into_inner().expr,
+            ),
+        }
+        .into()
+    }
+
+    fn vec3(
+        module: M<ParticleEffectModule>,
+        x: V<ParticleExprHandle>,
+        y: V<ParticleExprHandle>,
+        z: V<ParticleExprHandle>,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        ParticleExprHandle {
+            expr: m.module.vec3(
+                x.into_inner().expr,
+                y.into_inner().expr,
+                z.into_inner().expr,
+            ),
+        }
+        .into()
+    }
+
+    fn x(module: M<ParticleEffectModule>, a: V<ParticleExprHandle>) -> V<ParticleExprHandle> {
+        let m = module.0;
+        let expr = m.module.x(a.0.expr);
+        ParticleExprHandle { expr }.into()
+    }
+
+    fn y(module: M<ParticleEffectModule>, a: V<ParticleExprHandle>) -> V<ParticleExprHandle> {
+        let m = module.0;
+        let expr = m.module.y(a.0.expr);
+        ParticleExprHandle { expr }.into()
+    }
+
+    fn z(module: M<ParticleEffectModule>, a: V<ParticleExprHandle>) -> V<ParticleExprHandle> {
+        let m = module.0;
+        let expr = m.module.z(a.0.expr);
+        ParticleExprHandle { expr }.into()
+    }
+
+    fn pack4x8snorm(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        let expr = m.module.pack4x8snorm(a.0.expr);
+        ParticleExprHandle { expr }.into()
+    }
+
+    fn cast(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+        b: V<ValueType>,
+    ) -> V<ParticleExprHandle> {
+        let m = module.0;
+        let expr = m.module.cast(a.0.expr, b.0);
+        ParticleExprHandle { expr }.into()
+    }
+
+    // fn bitwise_and(
+    //     module: M<ParticleEffectModule>,
+    //     a: V<ParticleExprHandle>,
+    //     b: V<ParticleExprHandle>,
+    // ) -> Result<V<ParticleExprHandle>, InteropError> {
+    //     let m = module.0;
+    //     let expr = m.module.
+    //     Ok(V::new(ParticleExprHandle { expr }))
+    // }
+
     fn add(
-        _ctxt: FunctionCallContext,
         module: M<ParticleEffectModule>,
         a: V<ParticleExprHandle>,
         b: V<ParticleExprHandle>,
@@ -460,14 +701,33 @@ impl ParticleEffectModule {
         Ok(V::new(ParticleExprHandle { expr }))
     }
 
+    fn sub(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+        b: V<ParticleExprHandle>,
+    ) -> Result<V<ParticleExprHandle>, InteropError> {
+        let m = module.0;
+        let expr = m.module.sub(a.0.expr, b.0.expr);
+        Ok(V::new(ParticleExprHandle { expr }))
+    }
+
     fn mul(
-        _ctxt: FunctionCallContext,
         module: M<ParticleEffectModule>,
         a: V<ParticleExprHandle>,
         b: V<ParticleExprHandle>,
     ) -> Result<V<ParticleExprHandle>, InteropError> {
         let m = module.0;
         let expr = m.module.mul(a.0.expr, b.0.expr);
+        Ok(V::new(ParticleExprHandle { expr }))
+    }
+
+    fn div(
+        module: M<ParticleEffectModule>,
+        a: V<ParticleExprHandle>,
+        b: V<ParticleExprHandle>,
+    ) -> Result<V<ParticleExprHandle>, InteropError> {
+        let m = module.0;
+        let expr = m.module.div(a.0.expr, b.0.expr);
         Ok(V::new(ParticleExprHandle { expr }))
     }
 }

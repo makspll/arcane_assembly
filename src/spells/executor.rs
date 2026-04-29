@@ -36,7 +36,7 @@ use petgraph::{
 
 use crate::spells::{
     dotgraph::{SpellGraphNode, SpellGraphTransition},
-    spell::LiveSpell,
+    spell::{LiveSpell, WithLifetime},
     spell_component_asset::SpellComponentAsset,
 };
 
@@ -555,14 +555,7 @@ fn resolve_or_spawn_cast_entity(
                 .get_resource::<Time<Virtual>>()
                 .expect("missing time resource");
             let entity = world
-                .spawn(LiveSpell::new(
-                    execution.id,
-                    pos,
-                    vel,
-                    time,
-                    handle.clone(),
-                    spell,
-                ))
+                .spawn((LiveSpell::new(execution.id, pos, vel, time, handle.clone(), spell)))
                 .id();
 
             let allocated = ReflectReference::new_allocated(entity, &mut allocator);

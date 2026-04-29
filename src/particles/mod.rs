@@ -8,6 +8,7 @@ use crate::particles::{
         register_motion_integration_bindings, register_particle_attribute_bindings,
         register_particle_effect_builder, register_particle_modifier_bindings,
         register_particle_module_bindings, register_particle_render_modifier_bindings,
+        register_particle_value_bindings, register_particle_value_type_bindings,
         register_shape_dimension_bindings, register_simulation_condition_bindings,
         register_simulation_space_bindings,
     },
@@ -17,7 +18,7 @@ use crate::particles::{
 };
 mod bindings;
 
-pub fn clean_up_dead_particles(query: Query<ParticleEffect>) {}
+// pub fn clean_up_dead_particles(query: Query<ParticleEffect>) {}
 
 pub mod particle_effect_builder;
 pub struct GameParticlesPlugin;
@@ -43,5 +44,7 @@ impl Plugin for GameParticlesPlugin {
         register_shape_dimension_bindings(app.world_mut());
         register_color_blend_mask_bindings(app.world_mut());
         register_color_blend_mode_bindings(app.world_mut());
+        register_particle_value_type_bindings(app.world_mut());
+        register_particle_value_bindings(app.world_mut());
     }
 }

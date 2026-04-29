@@ -34,7 +34,7 @@ bevy_hanabi = { version = "0.18", default-features = false, features = ["2d", "s
 bevy_aseprite_ultra = { version = "0.8", features = ["asset_processing"] }
 
 # scripting
-bevy_mod_scripting = { git = "https://github.com/makspll/bevy_mod_scripting", rev = "a0a5991", features = [
+bevy_mod_scripting = { git = "https://github.com/makspll/bevy_mod_scripting", rev = "ee9e1ee", features = [
     "luajit",
     "lua_language_server_files",
 ] }

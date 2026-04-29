@@ -10,10 +10,6 @@
         {
             "identifier": "fireball",
             "handler_label": "main_fireball",
-            "script_controller_path": {
-                "mod_name": "Main",
-                "path": "spells/fireball.lua"
-            },
             "mana_drain_per_shot": 1,
             "delay_milliseconds": 100,
             "lifetime_milliseconds": 1000,

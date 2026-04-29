@@ -12,7 +12,10 @@ use crate::{
             AbilityExecution, AbilityExecutions, SpellEvent, progress_spell_executions,
             read_spell_events_into_executor, spell_executions_live,
         },
-        lifecycle::{trigger_spell_expirations, trigger_spell_hits},
+        lifecycle::{
+            despawn_expired_entities, mark_dead_lifetimes, trigger_spell_expirations,
+            trigger_spell_hits,
+        },
         mana::Mana,
         spell_component_asset::SpellComponentAsset,
     },
@@ -40,6 +43,7 @@ impl Plugin for GameSpellsPlugin {
         app.add_systems(
             Update,
             (
+                mark_dead_lifetimes.in_set(GameSystemSets::LifetimeDespawning),
                 trigger_spell_hits.in_set(GameSystemSets::SpellDispatch),
                 trigger_spell_expirations.in_set(GameSystemSets::SpellDispatch),
                 (
@@ -48,6 +52,7 @@ impl Plugin for GameSpellsPlugin {
                 )
                     .in_set(GameSystemSets::SpellHandling)
                     .chain(),
+                despawn_expired_entities.in_set(GameSystemSets::LifetimeDespawning),
             ),
         );
 
