@@ -16,7 +16,6 @@ use petgraph::
     dot::dot_parser::{DotAttrList, DotNodeWeight}
 ;
 
-// TODO: don't clone descriptors everywhere, store handles
 #[derive(Clone, Debug)]
 pub struct SpellGraphNode {
     pub descriptor: Handle<SpellComponentAsset>,

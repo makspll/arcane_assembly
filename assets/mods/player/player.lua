@@ -16,7 +16,6 @@ digraph {
     C [label="fireball"]
 
     Start -> B 
-    Start -> B
     B -> C [label="on_hit_terrain"]
     B -> C [label="on_hit_character"]
 }

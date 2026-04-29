@@ -19,24 +19,10 @@ use crate::{
 };
 
 pub fn trigger_spell_expirations(
-    time: Res<Time<Virtual>>,
-    mut spells: Query<(Entity, Ref<ExecutingSpellComponent>, Mut<WithLifetime>)>,
+    mut spells: Query<(Entity, &ExecutingSpellComponent, &WithLifetime)>,
     mut spell_events: MessageWriter<SpellEvent>,
 ) {
-    let current_time = time.elapsed_secs_wrapped_f64();
-
-    for (entity, spell, mut lifetime) in spells.iter_mut() {
-        if lifetime.expired {
-            continue;
-        }
-
-        // abs due to possible wrapping
-        let diff = (lifetime.start_at - current_time).abs();
-        if diff <= lifetime.lifetime_seconds {
-            continue;
-        }
-
-        lifetime.expired = true;
+    for (entity, spell, _) in spells.iter_mut().filter(|(_, _, l)| l.expired) {
         spell_events.write(SpellEvent {
             payload: SpellEventPayload::Expired {
                 spell_entity: entity,
@@ -84,5 +70,27 @@ pub fn trigger_spell_hits(
                 },
             });
         }
+    }
+}
+
+pub fn mark_dead_lifetimes(time: Res<Time<Virtual>>, mut with_lifetime: Query<&mut WithLifetime>) {
+    let current_time = time.elapsed_secs_wrapped_f64();
+
+    for (mut lifetime) in with_lifetime.iter_mut() {
+        // abs due to possible wrapping
+        let diff = (lifetime.start_at - current_time).abs();
+        if diff <= lifetime.lifetime_seconds {
+            continue;
+        }
+        lifetime.expired = true;
+    }
+}
+
+pub fn despawn_expired_entities(
+    with_lifetime: Query<(Entity, &WithLifetime)>,
+    mut commands: Commands,
+) {
+    for (e, _) in with_lifetime.iter().filter(|(_, l)| l.expired) {
+        commands.entity(e).despawn();
     }
 }

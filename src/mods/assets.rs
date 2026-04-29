@@ -11,6 +11,7 @@ use bevy::{
     reflect::{Reflect, TypeRegistry, Typed},
 };
 use bevy_mod_scripting::{
+    IntoScript,
     bindings::{
         ArgMeta, FromScript, GetTypeDependencies, InteropError, TypedThrough, V, WorldExtensions,
     },
@@ -21,8 +22,14 @@ use bevy_mod_scripting::{
 /// A newtype around [`Handle<T>`], with de-sugaring implemented for script binding code.
 ///
 /// We can use this to convert the [`UntypedHandle`]'s returned from load bindings, to a specific asset at the binding boundary.
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Debug, IntoScript, Reflect)]
 pub struct ScriptHandleWrapper<T: Asset>(pub Handle<T>);
+
+impl<T: Asset> From<Handle<T>> for ScriptHandleWrapper<T> {
+    fn from(value: Handle<T>) -> Self {
+        Self(value)
+    }
+}
 
 impl<T: Asset> GetTypeDependencies for ScriptHandleWrapper<T> {
     type Underlying = Handle<T>;

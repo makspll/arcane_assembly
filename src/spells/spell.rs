@@ -51,8 +51,18 @@ pub struct WithLifetime {
     pub start_at: f64,
     /// the time in seconds to keep this lifetime for
     pub lifetime_seconds: f64,
-    /// if true is already expired
+    /// if true is already expired, and will be despawned next frame
     pub expired: bool,
+}
+
+impl WithLifetime {
+    pub fn new(time: &Time<Virtual>, lifetime_seconds: f64) -> Self {
+        Self {
+            start_at: time.elapsed_secs_wrapped_f64(),
+            lifetime_seconds,
+            expired: false,
+        }
+    }
 }
 
 #[derive(Component, Reflect)]

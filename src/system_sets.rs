@@ -11,10 +11,14 @@ pub enum GameSystemSets {
     UpdateHandling,
     /// systems which handle player input related events
     PlayerInputHandling,
+    /// Systems which mark WithLifetime components as expired
+    LifetimeExpiry,
     /// Systems which trigger spell events
     SpellDispatch,
     /// systems which handle spell events
     SpellHandling,
+    /// Systems which despawn entities marked as expired in LifetimeExpiry
+    LifetimeDespawning,
 }
 
 pub struct GameSystemSetPlugin;
@@ -24,7 +28,17 @@ impl Plugin for GameSystemSetPlugin {
         use GameSystemSets::*;
         app.configure_sets(
             bevy::prelude::Update,
-            (UpdateDispatch, PlayerInputDispatch, SpellHandling).chain(),
+            (
+                UpdateDispatch,
+                PlayerInputDispatch,
+                LifetimeDespawning,
+                SpellDispatch,
+                SpellHandling,
+                UpdateHandling,
+                PlayerInputHandling,
+                LifetimeExpiry,
+            )
+                .chain(),
         );
     }
 }

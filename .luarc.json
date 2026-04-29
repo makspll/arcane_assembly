@@ -5,5 +5,8 @@
     ],
     "runtime.version": "LuaJIT",
     "hint.enable": false,
-    "diagnostics.disable": ["lowercase-global"]
+    "diagnostics.disable": ["lowercase-global"],
+    "workspace.ignoreDir": [
+        "assets/definitions/"
+    ]
 }
