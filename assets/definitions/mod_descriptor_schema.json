@@ -100,6 +100,11 @@
           "type": "number",
           "format": "float"
         },
+        "disable_collisions": {
+          "description": "If false will spawn a collider on the spell and send collision events to the spell",
+          "type": "boolean",
+          "default": false
+        },
         "handler_label": {
           "description": "The postfix to give to every handler for this spell. For example if this name is 'my_spell' then the handler for casting the spell\nwould have to be called \"on_cast_my_spell\", and similar for all the other spell callbacks.",
           "type": "string"

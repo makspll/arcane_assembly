@@ -104,6 +104,27 @@ impl LiveSpell {
         descriptor: &SpellComponentAsset,
     ) -> Self {
         let diameter = 0.1;
+        let (collision_groups, active_collision_events) = match descriptor
+            .descriptor
+            .disable_collisions
+        {
+            false => (
+                CollisionGroups::new(
+                    CollisionGroup::Projectile.into(),
+                    [
+                        CollisionGroup::ControlledEntity.into(),
+                        CollisionGroup::Terrain.into(),
+                    ]
+                    .into_iter()
+                    .collect(),
+                ),
+                ActiveEvents::COLLISION_EVENTS,
+            ),
+            true => (
+                CollisionGroups::new(CollisionGroup::Projectile.into(), [].into_iter().collect()),
+                ActiveEvents::empty(),
+            ),
+        };
         Self {
             name: Name::new(descriptor.descriptor.identifier.clone()),
             lifetime: WithLifetime {
@@ -127,16 +148,8 @@ impl LiveSpell {
             velocity: Velocity::linear(velocity),
             transform: Transform::from_xyz(position.x, position.y, 0.),
             collision_flags: ActiveCollisionTypes::all(),
-            collision_groups: CollisionGroups::new(
-                CollisionGroup::Projectile.into(),
-                [
-                    CollisionGroup::ControlledEntity.into(),
-                    CollisionGroup::Terrain.into(),
-                ]
-                .into_iter()
-                .collect(),
-            ),
-            active_collision_events: ActiveEvents::COLLISION_EVENTS,
+            collision_groups,
+            active_collision_events,
         }
     }
 }

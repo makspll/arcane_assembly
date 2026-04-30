@@ -5,6 +5,10 @@ use bevy_rapier2d::{
     rapier::prelude::RigidBody,
 };
 
+use crate::physics::bindings::{CollisionQueryCachedState, register_global_physics_functions};
+
+mod bindings;
+
 pub const UP: Vec2 = Vec2 { x: 0.0, y: 1.0 };
 pub const DOWN: Vec2 = Vec2 { x: 0.0, y: -1.0 };
 pub const LEFT: Vec2 = Vec2 { x: -1.0, y: 0.0 };
@@ -40,11 +44,15 @@ impl Plugin for PhysicsPlugin {
             PIXELS_PER_METER,
         ));
 
+        app.init_resource::<CollisionQueryCachedState>();
+
         #[cfg(feature = "dev_tools")]
         {
             use bevy_rapier2d::render::RapierDebugRenderPlugin;
 
             app.add_plugins(RapierDebugRenderPlugin::default());
         }
+
+        register_global_physics_functions(app.world_mut());
     }
 }
