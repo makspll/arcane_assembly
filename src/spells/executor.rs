@@ -26,7 +26,7 @@ use bevy_mod_scripting::{
     prelude::{RunScriptCallback, ScriptValue},
     script::ScriptAttachment,
 };
-use bevy_rapier2d::prelude::{RigidBody, Velocity};
+use bevy_rapier2d::prelude::{Collider, RigidBody, Velocity};
 use petgraph::{
     Graph,
     dot::{Config, Dot},

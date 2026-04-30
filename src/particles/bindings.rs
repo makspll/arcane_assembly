@@ -32,7 +32,7 @@ impl World {
     /// Spawns a one-shot particle effect at a position
     fn spawn_particle_effect_one_shot(
         ctxt: FunctionCallContext,
-        effect: V<ScriptHandleWrapper<EffectAsset>>,
+        effect: ScriptHandleWrapper<EffectAsset>,
         position: V<Vec3>,
         lifetime_seconds: f64,
     ) -> Result<V<Entity>, InteropError> {
@@ -44,7 +44,7 @@ impl World {
             let entity = w
                 .commands()
                 .spawn((
-                    ParticleEffect::new(effect.0.0),
+                    ParticleEffect::new(effect.0),
                     Transform::from_translation(*position),
                     with_lifetime,
                 ))
@@ -59,14 +59,14 @@ impl World {
     /// Spawns a persistent particle effect at an entity
     fn spawn_particle_effect(
         ctxt: FunctionCallContext,
-        effect: V<ScriptHandleWrapper<EffectAsset>>,
+        effect: ScriptHandleWrapper<EffectAsset>,
         parent_entity: V<Entity>,
     ) -> Result<V<Entity>, InteropError> {
         let world = ctxt.world()?;
 
         world.with_world_mut_access(|w| {
             let entity = w
-                .spawn((ChildOf(*parent_entity), ParticleEffect::new(effect.0.0)))
+                .spawn((ChildOf(*parent_entity), ParticleEffect::new(effect.0)))
                 .id();
 
             w.flush();
@@ -831,9 +831,9 @@ impl ParticleEffectBuilder {
 
     fn set_mesh(
         mut builder: V<ParticleEffectBuilder>,
-        mesh: V<ScriptHandleWrapper<Mesh>>,
+        mesh: ScriptHandleWrapper<Mesh>,
     ) -> V<ParticleEffectBuilder> {
-        builder.0.mesh = Some(mesh.0.0);
+        builder.0.mesh = Some(mesh.0);
         builder.0.into()
     }
 

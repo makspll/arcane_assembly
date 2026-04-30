@@ -12,12 +12,10 @@ local MANA_RECOVERY_PER_SECOND = 33
 local SPELL_TEXT = [[
 digraph {
     Start [label="fireball"]
-    B [label="fireball"]
-    C [label="fireball"]
+    B [label="explosion"]
 
-    Start -> B 
-    B -> C [label="on_hit_terrain"]
-    B -> C [label="on_hit_character"]
+    Start -> B [label="on_hit_terrain"]
+    Start -> B [label="on_hit_character"]
 }
 ]]
 

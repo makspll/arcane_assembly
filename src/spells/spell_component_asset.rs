@@ -35,6 +35,9 @@ pub struct SpellComponentDescriptor {
     pub children_slots: SlotCount,
     /// If a component has an area of effect, the engine will provide nearest entities/projectiles to its callbacks
     pub area_of_effect_meters: f32,
+    /// If false will spawn a collider on the spell and send collision events to the spell
+    #[serde(default)]
+    pub disable_collisions: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, Default, Reflect)]

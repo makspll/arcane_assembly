@@ -1,9 +1,9 @@
 use crate::{
     mods::{
-        assets::load_untyped_asset_for_script_descriptor,
+        assets::{ScriptHandleWrapper, load_untyped_asset_for_script_descriptor},
         bindings::audio::register_audio_global_functions,
-        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
         mod_descriptor_asset::ModDescriptorAsset,
+        mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
     },
     sprite::aseprite::{AsepriteHandle, set_aseprite_animation_on_entity},
 };
@@ -32,7 +32,7 @@ impl World {
         ctxt: FunctionCallContext,
         mod_name: String,
         path: String,
-    ) -> Result<Option<V<Handle<LoadedUntypedAsset>>>, InteropError> {
+    ) -> Result<Option<ScriptHandleWrapper<LoadedUntypedAsset>>, InteropError> {
         let world = ctxt.world()?;
         let o = world.with_resource(
             |script_descriptor_assets: &Assets<ModDescriptorAsset>| {
@@ -50,7 +50,7 @@ impl World {
                 })
             },
         )???;
-        Ok(o.map(V::from))
+        Ok(o)
     }
 }
 

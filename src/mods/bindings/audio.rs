@@ -1,5 +1,7 @@
+use std::any::TypeId;
+
 use crate::audio::{handle::AudioSourceHandle, start_sound_effect};
-use bevy::ecs::world::World;
+use bevy::{asset::LoadedUntypedAsset, audio::AudioSource, ecs::world::World};
 use bevy_mod_scripting::{
     bindings::{FunctionCallContext, InteropError},
     script_bindings,
@@ -17,6 +19,7 @@ impl World {
         handle: AudioSourceHandle,
     ) -> Result<(), InteropError> {
         let world = ctxt.world()?;
+
         world.with_world_mut_access(|w| {
             start_sound_effect(w.commands(), handle.0);
         })?;

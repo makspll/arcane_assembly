@@ -23,6 +23,11 @@ function World.get_resource(registration) end
 ---@return ScriptTypeRegistration | ScriptComponentRegistration | ScriptResourceRegistration | nil
 function World.get_type_by_name(type_name) end
 
+---@param effect any 
+---@param position Vec3 
+---@param lifetime_seconds number 
+---@return Entity
+function World.spawn_particle_effect_one_shot(effect,position,lifetime_seconds) end
 
 ---@return Entity
 function World.spawn() end
@@ -46,6 +51,15 @@ function World.get_parent(entity) end
 ---@return nil
 function World.cast_spell(spell,position,velocity) end
 
+---@param center Vec2 
+---@param radius number 
+---@return Entity[]
+function World.circle_collision_query(center,radius) end
+
+---@param effect any 
+---@param parent_entity Entity 
+---@return Entity
+function World.spawn_particle_effect(effect,parent_entity) end
 
 ---@param handle_reference ReflectReference 
 ---@return boolean
@@ -133,7 +147,7 @@ function World.add_default_component(entity,registration) end
 --- the name of the mod from which to load the asset
 ---@param path string 
 --- the relative path from the root of the mod to the asset
----@return bevy_asset::handle::Handle<bevy_asset::assets::LoadedUntypedAsset> | nil
+---@return any | nil
 function World.load_asset_from_mod(mod_name,path) end
 
 ---@param handle_reference ReflectReference 
@@ -558,6 +572,10 @@ function ParticleEffectBuilder.with_motion_integration(builder,integration) end
 ---@return ParticleEffectBuilder
 function ParticleEffectBuilder.with_simulation_condition(builder,cond) end
 
+---@param builder ParticleEffectBuilder 
+---@param mesh any 
+---@return ParticleEffectBuilder
+function ParticleEffectBuilder.set_mesh(builder,mesh) end
 
 ---@param builder ParticleEffectBuilder 
 ---@param count number 
@@ -25656,6 +25674,7 @@ SlotCount = {}
 ---@field  lifetime_milliseconds ? number
 ---@field  children_slots ? SlotCount
 ---@field  area_of_effect_meters ? number
+---@field  disable_collisions ? boolean
 SpellComponentDescriptor = {}
 
 

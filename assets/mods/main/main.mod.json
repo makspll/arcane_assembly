@@ -16,6 +16,17 @@
             "area_of_effect_meters": 0,
             "children_slots": "None",
             "icon_sprite_path": null
+        },
+        {
+            "identifier": "explosion",
+            "handler_label": "main_explosion",
+            "mana_drain_per_shot": 1,
+            "delay_milliseconds": 100,
+            "lifetime_milliseconds": 1,
+            "area_of_effect_meters": 0,
+            "children_slots": "None",
+            "icon_sprite_path": null,
+            "disable_collisions": true
         }
     ]
 }

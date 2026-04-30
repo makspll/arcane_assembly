@@ -1,29 +1,42 @@
+use std::any::TypeId;
+
 use crate::mods::{
     mod_descriptor_asset::ModDescriptorAsset,
     mod_descriptor_loaded_assets::ModDescriptorLoadedAssets,
 };
 use bevy::{
     asset::{
-        Asset, AssetServer, Assets, Handle, LoadedUntypedAsset, ParseAssetPathError, UntypedHandle,
+        Asset, AssetServer, Assets, Handle, LoadedUntypedAsset, ParseAssetPathError, StrongHandle,
+        UntypedHandle,
     },
     ecs::world::Mut,
     log::info,
-    reflect::{Reflect, TypeRegistry, Typed},
+    reflect::{FromReflect, PartialReflect, Reflect, TypeRegistry, Typed},
 };
 use bevy_mod_scripting::{
     IntoScript,
     bindings::{
-        ArgMeta, FromScript, GetTypeDependencies, InteropError, TypedThrough, V, WorldExtensions,
+        ArgMeta, FromScript, GetTypeDependencies, InteropError, IntoScript, TypedThrough, V,
+        WorldExtensions,
     },
-    display::WorldAccessGuard,
+    display::{WithTypeInfo, WorldAccessGuard},
     prelude::ScriptValue,
 };
 
 /// A newtype around [`Handle<T>`], with de-sugaring implemented for script binding code.
 ///
 /// We can use this to convert the [`UntypedHandle`]'s returned from load bindings, to a specific asset at the binding boundary.
-#[derive(Clone, Debug, IntoScript, Reflect)]
+#[derive(Clone, Debug, Reflect)]
 pub struct ScriptHandleWrapper<T: Asset>(pub Handle<T>);
+
+impl<T: Asset> IntoScript for ScriptHandleWrapper<T> {
+    fn into_script(
+        self,
+        world: bevy_mod_scripting::bindings::WorldGuard,
+    ) -> Result<ScriptValue, InteropError> {
+        V::new(self.0).into_script(world)
+    }
+}
 
 impl<T: Asset> From<Handle<T>> for ScriptHandleWrapper<T> {
     fn from(value: Handle<T>) -> Self {
@@ -58,6 +71,15 @@ impl<T: Asset> FromScript for ScriptHandleWrapper<T> {
     where
         Self: Sized,
     {
+        // TODO: implement a proper asset loading phase for scripts
+        // and make a distinction between loading and loaded assets
+        if let Ok(v) = V::<Handle<T>>::from_script(value.clone(), world.clone()) {
+            // buggy reflection :C
+            if v.0.clone().untyped().type_id() != TypeId::of::<LoadedUntypedAsset>() {
+                return Ok(Self(v.0));
+            }
+        };
+
         world
             .clone()
             .with_resource(|untyped_handles: &Assets<LoadedUntypedAsset>| {
@@ -86,7 +108,7 @@ pub fn load_untyped_asset_for_script_descriptor(
     script_descriptor_assets: &Assets<ModDescriptorAsset>,
     loaded_script_descriptors: &ModDescriptorLoadedAssets,
     asset_server: Mut<AssetServer>,
-) -> Result<Option<Handle<LoadedUntypedAsset>>, ParseAssetPathError> {
+) -> Result<Option<ScriptHandleWrapper<LoadedUntypedAsset>>, ParseAssetPathError> {
     let opt_descriptor_and_handle =
         loaded_script_descriptors.get_mod_by_name(mod_name, script_descriptor_assets);
 
@@ -105,7 +127,9 @@ pub fn load_untyped_asset_for_script_descriptor(
 
             info!("Loading asset for mod: {mod_name}, from: '{mod_relative_asset_path}'");
 
-            Ok(Some(asset_server.load_untyped(mod_relative_asset_path)))
+            Ok(Some(
+                asset_server.load_untyped(mod_relative_asset_path).into(),
+            ))
         }
         _ => Ok(None),
     }
