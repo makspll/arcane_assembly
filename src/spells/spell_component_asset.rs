@@ -26,7 +26,9 @@ pub struct SpellComponentDescriptor {
     /// The delay after which the next component can be triggered following this one.
     /// If less than the time between frames, will trigger a
     /// component every frame, but no more frequently than that.
-    pub delay_milliseconds: f32,
+    ///
+    /// The delay only applies after the component is cast, before the next one is executed
+    pub delay_milliseconds: f64,
     /// The time after which this component is killed, and its death effect triggered
     pub lifetime_milliseconds: f32,
     /// Components can be slotted with children components, for example
@@ -38,6 +40,10 @@ pub struct SpellComponentDescriptor {
     /// If false will spawn a collider on the spell and send collision events to the spell
     #[serde(default)]
     pub disable_collisions: bool,
+    /// If set will prevent the component from being killed when
+    /// it hits an entity or terrain
+    #[serde(default)]
+    pub dont_expire_on_hit: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, Default, Reflect)]

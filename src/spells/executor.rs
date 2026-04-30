@@ -6,6 +6,7 @@ use bevy::{
         entity::Entity,
         error::trace,
         message::{Message, MessageReader},
+        query::With,
         reflect::ReflectResource,
         resource::Resource,
         system::{Command, Local, Query, Res, ResMut, SystemState},
@@ -34,10 +35,14 @@ use petgraph::{
     visit::{Dfs, EdgeRef, Walker},
 };
 
-use crate::spells::{
-    dotgraph::{SpellGraphNode, SpellGraphTransition},
-    spell::{LiveSpell, WithLifetime},
-    spell_component_asset::SpellComponentAsset,
+use crate::{
+    character::controllable_character::Character,
+    spells::{
+        dotgraph::{SpellGraphNode, SpellGraphTransition},
+        mana::Mana,
+        spell::{LiveSpell, WithLifetime},
+        spell_component_asset::SpellComponentAsset,
+    },
 };
 
 type NodeId = usize;
@@ -261,26 +266,45 @@ impl SpellEventPayload {
         match self {
             SpellEventPayload::Cast { .. } => {}
             SpellEventPayload::HitCharacter { other_entity, .. } => {
-                dest.push(ReflectReference::new_allocated(*other_entity, &mut allocator).into())
+                dest.push(ReflectReference::new_allocated(*other_entity, allocator).into())
             }
             SpellEventPayload::HitTerrain { other_entity, .. } => {
-                dest.push(ReflectReference::new_allocated(*other_entity, &mut allocator).into())
+                dest.push(ReflectReference::new_allocated(*other_entity, allocator).into())
             }
             SpellEventPayload::Expired { .. } => {}
             SpellEventPayload::Custom { .. } => {} // TODO: allow args ?
         }
     }
+
+    fn despawn_spell_component(&self, spell_descriptor_asset: &SpellComponentAsset) -> bool {
+        match self {
+            SpellEventPayload::Expired { .. } => true,
+            SpellEventPayload::HitCharacter { .. } | SpellEventPayload::HitTerrain { .. } => {
+                !spell_descriptor_asset.descriptor.dont_expire_on_hit
+            }
+            _ => false,
+        }
+    }
+
+    fn consumes_mana(&self) -> bool {
+        match self {
+            SpellEventPayload::Cast { .. } => true,
+            _ => false,
+        }
+    }
 }
 
 pub struct CastSpell {
+    pub caster: Entity,
     pub graph: Spell,
     pub position: Vec2,
     pub velocity: Vec2,
 }
 
 impl CastSpell {
-    pub fn new(graph: impl Into<Spell>, position: Vec2, velocity: Vec2) -> Self {
+    pub fn new(caster: Entity, graph: impl Into<Spell>, position: Vec2, velocity: Vec2) -> Self {
         Self {
+            caster,
             graph: graph.into(),
             position,
             velocity,
@@ -294,7 +318,7 @@ impl Command for CastSpell {
             .remove_resource::<AbilityExecutions>()
             .expect("missing resource");
 
-        let execution = AbilityExecution::new(self.graph);
+        let execution = AbilityExecution::new(self.caster, self.graph);
 
         world.write_message(SpellEvent {
             execution_id: execution.id,
@@ -309,6 +333,7 @@ impl Command for CastSpell {
 }
 
 pub struct AbilityExecution {
+    pub caster: Entity,
     pub id: AbilityExecutionId,
     pub unprocessed_events: VecDeque<SpellEvent>,
     pub graph: Spell,
@@ -316,19 +341,22 @@ pub struct AbilityExecution {
     pub next_node: NodeId,
     pub state: AbilityExecutionState,
     pub last_cast_entity: Entity,
+    pub delay_left_miliseconds: f64,
 }
 
 impl AbilityExecution {
-    pub fn new(graph: Spell) -> Self {
+    pub fn new(caster: Entity, graph: Spell) -> Self {
         static ID_HEAD: AtomicUsize = AtomicUsize::new(0);
 
         Self {
+            caster,
             id: ID_HEAD.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             unprocessed_events: Default::default(),
             next_node: 0,
             graph,
             state: AbilityExecutionState::Executing,
             last_cast_entity: Entity::PLACEHOLDER,
+            delay_left_miliseconds: 0.,
         }
     }
 }
@@ -357,12 +385,13 @@ pub fn spell_executions_live(executions: Res<AbilityExecutions>) -> bool {
 struct StepPlan {
     spell_component_to_execute: Handle<SpellComponentAsset>,
     progress_to_next_spell_after_execution: Option<NodeId>,
-    terminate_spell_after_execution: bool,
 }
 
 pub fn progress_spell_executions(
     world: &mut World,
+    mut time_state: Local<SystemState<Res<Time<Virtual>>>>,
     mut query_state: Local<SystemState<Query<(&Transform, &Velocity)>>>,
+    mut query_caster_mana: Local<SystemState<Query<&mut Mana, With<Character>>>>,
 ) {
     let mut executions = world
         .remove_resource::<AbilityExecutions>()
@@ -383,8 +412,19 @@ pub fn progress_spell_executions(
         any_finished = true;
     };
 
+    let elapsed_time_ms = time_state.get(world).delta_secs_f64() * 1000.;
+
     for (_, execution) in &mut executions.0 {
-        while let Some(event) = execution.unprocessed_events.pop_front() {
+        let mut caster_current_mana = query_caster_mana
+            .get_mut(world)
+            .get(execution.caster)
+            .map(|m| m.current)
+            .unwrap_or_default();
+
+        execution.delay_left_miliseconds -= elapsed_time_ms;
+        while execution.delay_left_miliseconds <= 0.
+            && let Some(event) = execution.unprocessed_events.pop_front()
+        {
             let plan = match plan_execution_for_event(execution, &event.payload) {
                 Ok(plan) => plan,
                 Err(err) => {
@@ -410,11 +450,15 @@ pub fn progress_spell_executions(
                     }
                 };
 
-            trace!("Executing spell event: {:?}", event.payload);
-
-            if plan.terminate_spell_after_execution {
-                mark_terminal_state(execution);
+            if event.payload.consumes_mana() {
+                caster_current_mana -= spell_descriptor_asset.descriptor.mana_drain_per_shot;
+                if caster_current_mana < 0. {
+                    mark_terminal_state(execution);
+                    continue;
+                }
             }
+
+            trace!("Executing spell event: {:?}", event.payload);
 
             let (entity_ref, entity) = resolve_or_spawn_cast_entity(
                 world,
@@ -424,6 +468,13 @@ pub fn progress_spell_executions(
                 spell_descriptor_asset,
                 &plan.spell_component_to_execute,
             );
+
+            if event
+                .payload
+                .despawn_spell_component(spell_descriptor_asset)
+            {
+                world.commands().entity(entity).despawn();
+            }
 
             // we have to do this here just before the callback
             // because the callback itself may despawn the entity, meaning we won't have access to the transform
@@ -471,9 +522,17 @@ pub fn progress_spell_executions(
                     },
                 });
                 execution.next_node = move_to_node;
+                execution.delay_left_miliseconds =
+                    spell_descriptor_asset.descriptor.delay_milliseconds;
             }
             execution.last_cast_entity = entity;
         }
+
+        query_caster_mana
+            .get_mut(world)
+            .get_mut(execution.caster)
+            .iter_mut()
+            .for_each(|m| m.current = caster_current_mana);
     }
 
     // cleanup
@@ -487,7 +546,7 @@ pub fn progress_spell_executions(
     world.insert_resource(spell_descriptor_assets);
 }
 
-pub fn plan_execution_for_event(
+fn plan_execution_for_event(
     execution: &AbilityExecution,
     payload: &SpellEventPayload,
 ) -> Result<StepPlan, String> {
@@ -513,7 +572,6 @@ pub fn plan_execution_for_event(
     Ok(StepPlan {
         spell_component_to_execute: spell_to_execute,
         progress_to_next_spell_after_execution,
-        terminate_spell_after_execution: matches!(payload, SpellEventPayload::Expired { .. }),
     })
 }
 
@@ -555,7 +613,14 @@ fn resolve_or_spawn_cast_entity(
                 .get_resource::<Time<Virtual>>()
                 .expect("missing time resource");
             let entity = world
-                .spawn((LiveSpell::new(execution.id, pos, vel, time, handle.clone(), spell)))
+                .spawn(LiveSpell::new(
+                    execution.id,
+                    pos,
+                    vel,
+                    time,
+                    handle.clone(),
+                    spell,
+                ))
                 .id();
 
             let allocated = ReflectReference::new_allocated(entity, &mut allocator);

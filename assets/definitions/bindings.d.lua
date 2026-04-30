@@ -44,17 +44,19 @@ function World.get_parent(entity) end
 
 ---@param spell Spell 
 --- the spell to cast
+---@param caster Entity 
 ---@param position Vec2 
 --- the position of the cast
 ---@param velocity Vec2 
 --- the velocity of the cast
 ---@return nil
-function World.cast_spell(spell,position,velocity) end
+function World.cast_spell(spell,caster,position,velocity) end
 
 ---@param center Vec2 
 ---@param radius number 
+---@param groups Group 
 ---@return Entity[]
-function World.circle_collision_query(center,radius) end
+function World.circle_collision_query(center,radius,groups) end
 
 ---@param effect any 
 ---@param parent_entity Entity 
@@ -7598,6 +7600,28 @@ function Instant.saturating_duration_since(_self,earlier) end
 ---@param _self Instant 
 ---@return nil
 function Instant.assert_receiver_is_total_eq(_self) end
+
+
+
+---@class Group : ReflectReference
+---  A bit mask identifying groups for interaction.
+---@field  [1]  integer
+Group = {}
+
+---@return Group
+function Group.ENTITY() end
+
+---@return Group
+function Group.PROJECTILE() end
+
+---@return Group
+function Group.ENTITY_AND_TERRAIN() end
+
+---@return Group
+function Group.TERRAIN() end
+
+---@return Group
+function Group.ALL() end
 
 
 
@@ -25675,6 +25699,7 @@ SlotCount = {}
 ---@field  children_slots ? SlotCount
 ---@field  area_of_effect_meters ? number
 ---@field  disable_collisions ? boolean
+---@field  dont_expire_on_hit ? boolean
 SpellComponentDescriptor = {}
 
 
@@ -31445,13 +31470,6 @@ ContactSkin = {}
 ---@field  coefficient ? number
 ---@field  combine_rule ? CoefficientCombineRule
 Friction = {}
-
-
-
----@class Group : ReflectReference
----  A bit mask identifying groups for interaction.
----@field  [1]  integer
-Group = {}
 
 
 

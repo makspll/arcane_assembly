@@ -15,8 +15,10 @@ use bevy_mod_scripting::{
 use bevy_rapier2d::{
     parry::shape::{Ball, Shape},
     plugin::ReadRapierContext,
-    prelude::{Collider, QueryFilter, ShapeCastOptions},
+    prelude::{Collider, CollisionGroups, Group, QueryFilter, ShapeCastOptions},
 };
+
+use crate::physics::CollisionGroup;
 
 #[derive(Resource)]
 pub struct CollisionQueryCachedState(SystemState<ReadRapierContext<'static, 'static>>);
@@ -24,6 +26,29 @@ pub struct CollisionQueryCachedState(SystemState<ReadRapierContext<'static, 'sta
 impl FromWorld for CollisionQueryCachedState {
     fn from_world(world: &mut World) -> Self {
         Self(SystemState::new(world))
+    }
+}
+
+#[script_bindings(remote, name = "group_functions")]
+impl Group {
+    pub fn PROJECTILE() -> V<Group> {
+        Group::from(CollisionGroup::Projectile).into()
+    }
+    pub fn ENTITY() -> V<Group> {
+        Group::from(CollisionGroup::ControlledEntity).into()
+    }
+    pub fn TERRAIN() -> V<Group> {
+        Group::from(CollisionGroup::Terrain).into()
+    }
+
+    pub fn ALL() -> V<Group> {
+        Group::all().into()
+    }
+
+    pub fn ENTITY_AND_TERRAIN() -> V<Group> {
+        Group::from(CollisionGroup::Terrain)
+            .union(Group::from(CollisionGroup::ControlledEntity))
+            .into()
     }
 }
 
@@ -36,6 +61,7 @@ impl World {
         ctxt: FunctionCallContext,
         center: V<Vec2>,
         radius: f32,
+        groups: V<Group>,
     ) -> Result<Vec<V<Entity>>, InteropError> {
         let world = ctxt.world()?;
 
@@ -48,7 +74,7 @@ impl World {
                     *center,
                     Default::default(),
                     &Ball::new(radius),
-                    QueryFilter::new(),
+                    QueryFilter::new().groups(CollisionGroups::new(groups.0, groups.0)),
                     |entity| {
                         entities.push(entity.into());
                         true

@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::{component::Component, reflect::ReflectComponent},
+    ecs::{component::Component, reflect::ReflectComponent, system::EntityCommand},
     reflect::Reflect,
 };
 

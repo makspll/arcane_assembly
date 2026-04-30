@@ -7,7 +7,6 @@ local input_to_animation_map = {
 }
 local STEP_SFX_PERIOD_SECONDS = 0.3
 local MIN_FIRE_DELAY_SECONDS = 0.16
-local MANA_CONSUMPTION = 10
 local MANA_RECOVERY_PER_SECOND = 33
 local SPELL_TEXT = [[
 digraph {
@@ -91,26 +90,22 @@ function on_player_input(inputs, elapsed_seconds)
     end
 
     if spell_fired and (elapsed_seconds - state.fire_last_time > MIN_FIRE_DELAY_SECONDS) then
-        local new_mana = state.mana_component.current - MANA_CONSUMPTION
-        if new_mana <= 0 then
-            return
-        else
-            state.mana_component.current = new_mana
-            state.fire_last_time = elapsed_seconds
 
-            ---@type MousePositionInWorldCoordinates
-            local mouse_pos = world.get_resource(types.MousePositionInWorldCoordinates)
-            ---@type GlobalTransform
-            local entity_transform =  world.get_component(entity, types.GlobalTransform)
-            local entity_world_pos_2d = entity_transform:translation():truncate()
-            local speed_m = 10
+        state.fire_last_time = elapsed_seconds
 
-            world.cast_spell(
-                state.spell_graph,
-                mouse_pos[1],
-                Vec2.new(mouse_pos[1].x - entity_world_pos_2d.x, 2) * speed_m
-            )
-        end
+        ---@type MousePositionInWorldCoordinates
+        local mouse_pos = world.get_resource(types.MousePositionInWorldCoordinates)
+        ---@type GlobalTransform
+        local entity_transform =  world.get_component(entity, types.GlobalTransform)
+        local entity_world_pos_2d = entity_transform:translation():truncate()
+        local speed_m = 10
+
+        world.cast_spell(
+            state.spell_graph,
+            entity,
+            mouse_pos[1],
+            Vec2.new(mouse_pos[1].x - entity_world_pos_2d.x, 2) * speed_m
+        )
 
 
     end

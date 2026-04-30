@@ -10,8 +10,8 @@
         {
             "identifier": "fireball",
             "handler_label": "main_fireball",
-            "mana_drain_per_shot": 1,
-            "delay_milliseconds": 100,
+            "mana_drain_per_shot": 5,
+            "delay_milliseconds": 50,
             "lifetime_milliseconds": 1000,
             "area_of_effect_meters": 0,
             "children_slots": "None",
@@ -20,9 +20,9 @@
         {
             "identifier": "explosion",
             "handler_label": "main_explosion",
-            "mana_drain_per_shot": 1,
-            "delay_milliseconds": 100,
-            "lifetime_milliseconds": 1,
+            "mana_drain_per_shot": 10,
+            "delay_milliseconds": 1000,
+            "lifetime_milliseconds": 0,
             "area_of_effect_meters": 0,
             "children_slots": "None",
             "icon_sprite_path": null,

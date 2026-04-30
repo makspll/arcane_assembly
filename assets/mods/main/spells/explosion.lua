@@ -1,6 +1,7 @@
 main_explosion_state = {
     damage_per_hit = 50,
-    radius = 1
+    radius = 1,
+    explosion_collision_groups = Group.ENTITY()
 }
 
 function make_particle_effect()
@@ -29,15 +30,15 @@ function make_particle_effect()
     color = module:pack4x8snorm(color)
 
     -- speed and shape
-    local speed = module:lit_f32(2)
+    local speed = module:lit_f32(0.5)
     local surface_dimension = ShapeDimension.volume()
-    local size = module:lit_f32(0.05)
+    local size = module:lit_f32(0.1)
     local lifetime = module:lit_f32(0.8)
     local roundness = module:lit_f32(0.4)
 
     -- local gravity = module:lit_vec3(Vec3.new(0.0, -9.8, 0.0))
     local drag = module:rand(ValueType.float())
-    drag = module:mul(drag, module:lit_f32(15))
+    drag = module:mul(drag, module:lit_f32(10))
 
     local axis_up = module:lit_vec3(Vec3.new(0.0, 0.0, 1.0))
 
@@ -57,7 +58,7 @@ function make_particle_effect()
     local effect =
         builder
             :with_capacity(100)
-            :with_spawner_particle_count(20)
+            :with_spawner_particle_count(100)
             :with_spawner_cycle_period(0)
             :with_spawner_cycle_time(0.1)
             :with_spawner_cycle_count(1)
@@ -77,11 +78,6 @@ end
 
 function on_script_loaded()
     register_callback("on_cast_main_explosion", on_spell_cast)
-    -- register_callback("on_hit_character_main_explosion", on_spell_hit_character)
-    -- register_callback("on_hit_terrain_main_explosion", on_spell_hit_terrain)
-    -- register_callback("on_expired_main_explosion", on_spell_expired)
-
-  
     main_explosion_state.particle_effect = make_particle_effect()
 end
 
@@ -91,7 +87,7 @@ function on_spell_cast(entity)
     ---@type Transform
     local transform = world.get_component(entity, types.Transform)
     local position = transform.translation
-    local entities_hit = world.circle_collision_query(position, main_explosion_state.radius)
+    local entities_hit = world.circle_collision_query(position, main_explosion_state.radius, main_explosion_state.explosion_collision_groups)
     world.spawn_particle_effect_one_shot(main_explosion_state.particle_effect, position, 1)
     for i,hit_entity in pairs(entities_hit) do
         ---@type Health?
@@ -101,22 +97,3 @@ function on_spell_cast(entity)
         end
     end
 end
-
--- function on_spell_expired(entity)
--- end
-
--- --- Emits sounds and particles as appropriate
--- ---@param entity Entity
--- function collision_effects(entity)
---     world.play_sound_effect(main_explosion_state.sfx_fireball)
--- end
-
--- function on_spell_hit_character(entity, other_entity)
---     ---@type Health
---     local health = world.get_component(other_entity, main_explosion_state.type_health_component)
---     if health ~= nil then
---         health.current = health.current - main_explosion_state.damage_per_hit
---     end
---     collision_effects(entity)
--- end
-
