@@ -96,12 +96,17 @@
           "default": "None"
         },
         "delay_milliseconds": {
-          "description": "The delay after which the next component can be triggered following this one.\nIf less than the time between frames, will trigger a\ncomponent every frame, but no more frequently than that.",
+          "description": "The delay after which the next component can be triggered following this one.\nIf less than the time between frames, will trigger a\ncomponent every frame, but no more frequently than that.\n\nThe delay only applies after the component is cast, before the next one is executed",
           "type": "number",
-          "format": "float"
+          "format": "double"
         },
         "disable_collisions": {
           "description": "If false will spawn a collider on the spell and send collision events to the spell",
+          "type": "boolean",
+          "default": false
+        },
+        "dont_expire_on_hit": {
+          "description": "If set will prevent the component from being killed when\nit hits an entity or terrain",
           "type": "boolean",
           "default": false
         },

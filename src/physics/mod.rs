@@ -1,11 +1,17 @@
-use bevy::{app::Plugin, ecs::bundle::Bundle, math::Vec2};
+use bevy::{app::Plugin, ecs::bundle::Bundle, math::Vec2, reflect::Reflect};
+use bevy_mod_scripting::{
+    ArgMeta, GetTypeDependencies, TypedThrough,
+    bindings::{FromScript, InteropError, TypedThrough},
+};
 use bevy_rapier2d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     prelude::{Collider, CollisionGroups, Group},
     rapier::prelude::RigidBody,
 };
 
-use crate::physics::bindings::{CollisionQueryCachedState, register_global_physics_functions};
+use crate::physics::bindings::{
+    CollisionQueryCachedState, register_global_physics_functions, register_group_functions,
+};
 
 mod bindings;
 
@@ -28,9 +34,9 @@ pub enum CollisionGroup {
     Terrain,
 }
 
-impl Into<Group> for CollisionGroup {
-    fn into(self) -> Group {
-        match self {
+impl From<CollisionGroup> for Group {
+    fn from(val: CollisionGroup) -> Self {
+        match val {
             CollisionGroup::Projectile => Group::GROUP_1,
             CollisionGroup::ControlledEntity => Group::GROUP_2,
             CollisionGroup::Terrain => Group::GROUP_3,
@@ -54,5 +60,6 @@ impl Plugin for PhysicsPlugin {
         }
 
         register_global_physics_functions(app.world_mut());
+        register_group_functions(app.world_mut());
     }
 }

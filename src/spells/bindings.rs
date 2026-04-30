@@ -1,7 +1,7 @@
 use crate::{
     mods::{
-        mod_descriptor_loaded_assets::{self, ModDescriptorLoadedAssets},
         mod_descriptor_asset::ModDescriptorAsset,
+        mod_descriptor_loaded_assets::{self, ModDescriptorLoadedAssets},
     },
     spells::{
         dotgraph::dot_graph_to_spell_graph,
@@ -54,6 +54,7 @@ impl World {
     fn cast_spell(
         ctxt: FunctionCallContext,
         spell: V<Spell>,
+        caster: V<Entity>,
         position: V<Vec2>,
         velocity: V<Vec2>,
     ) -> Result<(), InteropError> {
@@ -63,7 +64,12 @@ impl World {
         world.with_world_mut_access(|w| {
             w.commands()
                 // could do ref but we need to clone anyway
-                .queue(CastSpell::new(spell.into_inner(), *position, *velocity));
+                .queue(CastSpell::new(
+                    *caster,
+                    spell.into_inner(),
+                    *position,
+                    *velocity,
+                ));
 
             // immediately apply command
             w.flush();
